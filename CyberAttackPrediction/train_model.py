@@ -30,9 +30,27 @@ def run_training(dataset_path=None):
     # The model folder is inside the same folder as this script.
     model_dir = os.path.join(base_dir, "model")
 
-    # If no specific dataset was given, use the default training file.
+    # If no specific dataset was given, resolve the default with fallbacks.
+    # (Render/production clones gitignore *.csv, so kdd_train.csv is often
+    # absent there while sample_train.csv is force-tracked.)
     if not dataset_path:
-        dataset_path = os.path.join(base_dir, "Dataset", "kdd_train.csv")
+        candidates = [
+            os.path.join(base_dir, "Dataset", "kdd_train.csv"),
+            os.path.join(base_dir, "Dataset", "sample_train.csv"),
+        ]
+        # Last resort: first available CSV in Dataset/
+        try:
+            dataset_dir = os.path.join(base_dir, "Dataset")
+            if os.path.isdir(dataset_dir):
+                for _f in sorted(os.listdir(dataset_dir)):
+                    if _f.lower().endswith(".csv"):
+                        _p = os.path.join(dataset_dir, _f)
+                        if _p not in candidates:
+                            candidates.append(_p)
+                        break
+        except Exception:
+            pass
+        dataset_path = next((c for c in candidates if os.path.exists(c)), candidates[0])
 
     # This is the full path where the finished model file will be saved.
     model_output_path = os.path.join(model_dir, "trained_rf_model.pkl")
