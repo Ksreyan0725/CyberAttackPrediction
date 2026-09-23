@@ -13,8 +13,10 @@
   **Predicting network intrusions with precision. Explaining security with intelligence.**
 </p>
 
-![Python](https://img.shields.io/badge/Python-3.13.2-3776AB?style=for-the-badge&logo=python&logoColor=white) ![Flask](https://img.shields.io/badge/Flask-v3.1.3-000000?style=for-the-badge&logo=flask&logoColor=white) ![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-v1.8.0-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white) ![Status](https://img.shields.io/badge/Status-Stable--2026--Hardened-success?style=for-the-badge)
+![Python](https://img.shields.io/badge/Python-3.13.2-3776AB?style=for-the-badge&logo=python&logoColor=white) ![Flask](https://img.shields.io/badge/Flask-v3.1.3-000000?style=for-the-badge&logo=flask&logoColor=white) ![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-v1.8.0-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white) ![Status](https://img.shields.io/badge/Status-Stable--2026--Hardened-success?style=for-the-badge) [![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://cyberattackprediction.onrender.com/)
 
+### 🚀 [Live Web Application](https://cyberattackprediction.onrender.com/)
+Experience the live deployed model running on Render.
 ## 🏛️ Academic Institutional Details
 
 - **Institution**: Roland Institute of Computer & Management Studies, Berhampur
@@ -41,10 +43,10 @@
 
 This project includes all necessary software. Follow these **3 simple steps** to launch the application for your viva:
 
-1. **Install Python**: Open the [📁 Software/](Software/) folder and run **[🐍 python-3.13.12-amd64.exe](Software/python-3.13.12-amd64.exe)**.
+1. **Install Python**: Open `python-3.13.12-amd64.exe` (must be installed manually or retrieved from python.org).
 2. **Configure Secrets**: Create a `.env` file in the root directory (use `.env.example` as a template) to secure your admin credentials and Flask session keys.
-3. **Setup Dependencies**: Run the [⚙️ Pack Install.bat](Software/Pack%20Install.bat) or `install_deps.ps1` to automatically prepare the high-performance environment.
-4. **Unified Launch**: Run [🐍 launcher.py](launcher.py) to access the **Command Center**. Choose **Mode 1** for the Web Dashboard or **Mode 2** for Jupyter research.
+3. **Setup Dependencies**: Run `scripts/install_deps.ps1` to automatically prepare the high-performance environment.
+4. **Unified Launch**: Run `scripts/start_launcher.bat` (or `launcher.py`) to access the **Command Center**. Choose **Mode 1** for the Web Dashboard or **Mode 2** for Jupyter research.
 5. **Active Session Guard**: Start scripts now feature **Venv Persistence**, ensuring the `.venv` environment remains active and isolated for high-performance operation.
 
 > [!TIP]
@@ -110,33 +112,26 @@ ADMIN_HASH=pbkdf2:sha256:600000$...
 ## 🏗️ Project Structure
 
 - 📁 [**CyberAttackPrediction/**](CyberAttackPrediction/) — Main project folder
-
-  - 📁 [static/](CyberAttackPrediction/static/) — Styles, JS & images
+  - 📁 [static/](CyberAttackPrediction/static/) — Styles, JS & web images
   - 📁 [templates/](CyberAttackPrediction/templates/) — HTML pages
   - 📁 [model/](CyberAttackPrediction/model/) — Saved AI model files
   - 📁 [Dataset/](CyberAttackPrediction/Dataset/) — All CSV training & test data
-  - 📁 [scripts/](CyberAttackPrediction/scripts/) — Internal maintenance utilities
   - 🐍 **[Main.py](CyberAttackPrediction/Main.py)** — Flask backend (heart of the project)
   - 🐍 [train_model.py](CyberAttackPrediction/train_model.py) — AI trainer script
   - 📔 [ExtensionCyberAttack.ipynb](CyberAttackPrediction/ExtensionCyberAttack.ipynb) — Research notebook (Phase 2)
   - 📔 [ProposeCyberAttack.ipynb](CyberAttackPrediction/ProposeCyberAttack.ipynb) — Research notebook (Phase 1)
   - 📄 [requirements.txt](CyberAttackPrediction/requirements.txt) — Python dependencies
   - 📄 [users.json](CyberAttackPrediction/users.json) — User registry
-  - 🔐 [.env](.env) — Sensitive configuration & secrets
+- 📁 [**assets/**](assets/) — Project assets
+  - 📁 [images/](assets/images/) — Academic flowcharts and diagrams
 - 📁 [**docs/**](docs/) — Unified documentation hub
-
-  - 📖 [PROJECT_BOOK.md](docs/PROJECT_BOOK.md) — Definitive technical guide
-  - 📘 [PROJECT_GUIDE.md](docs/PROJECT_GUIDE.md) — Comprehensive reference & viva prep
-  - 📜 [TECHNICAL_WORKFLOW.md](docs/TECHNICAL_WORKFLOW.md) — System logic & architecture
-  - 📗 [BeReady.md](docs/BeReady.md) — Student study handbook
-  - 📋 [GUIDE_BOOK.md](docs/GUIDE_BOOK.md) — Quick-start & run instructions
-  - 🔍 [DATASET_AUDIT.md](docs/DATASET_AUDIT.md) — Dataset folder structure explained
-- 📁 [Software/](Software/) — Installers & venv helpers
-- 📁 [backups/](backups/) — Original zips & legacy files
-- 📁 [Project%20materials/](Project%20materials/) — Graphics & reference images
+  - 📁 [reports/](docs/reports/) — Final reports in PDF and Word formats
+  - 📁 [materials/](docs/materials/) — Reference books and technical guides
+- 📁 [**scripts/**](scripts/) — Startup and installation scripts
+  - ⚙️ [Start_WebApp_Venv.bat](scripts/Start_WebApp_Venv.bat) — Web app launcher
+  - ⚙️ [Start_Jupyter_Venv.bat](scripts/Start_Jupyter_Venv.bat) — Jupyter launcher
+  - 📜 [install_deps.ps1](scripts/install_deps.ps1) — Automated dependency installer
 - 🐍 [launcher.py](launcher.py) — Unified command center
-- ⚙️ [Start_WebApp_Venv.bat](Start_WebApp_Venv.bat) — Web app launcher
-- ⚙️ [Start_Jupyter_Venv.bat](Start_Jupyter_Venv.bat) — Jupyter launcher
-- 📜 [install_deps.ps1](install_deps.ps1) — Automated dependency installer
+- 🔐 [.env](.env) — Sensitive configuration & secrets (Hidden from git)
 
 Built with ❤️ for Academic Excellence — 2026
