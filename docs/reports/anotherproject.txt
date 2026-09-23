@@ -1,0 +1,785 @@
+1. INTRODUCTION
+The rapid pace of technological advancement has consistently reshaped the structure of labour markets across the globe. Innovations in artificial intelligence, automation, data analytics, and digital platforms have altered not only the nature of work but also the types of skills and occupations that are in demand. As industries evolve, traditional methods of understanding and predicting job demand often struggle to keep pace with these dynamic changes. Accurate job demand estimation has therefore become a critical concern for policymakers, educational institutions, businesses, and individuals seeking to adapt to future workforce requirements.
+Historically, job demand analysis has relied heavily on economic indicators, employment statistics, surveys, and expert opinions. While these approaches provide valuable insights, they are often retrospective, reflecting labour market conditions after changes have already occurred. In rapidly evolving technological environments, such lagging indicators may fail to capture early signals of emerging job roles or declining occupational relevance. Consequently, there is a growing need for forward-looking, data-driven approaches that can identify job demand trends at an earlier stage and with greater precision.
+One promising yet underutilized source of information for understanding labour market evolution is patent data. Patents represent formal documentation of technological innovation and provide detailed descriptions of new methods, systems, and applications across diverse domains. Because patents are filed at the early stages of technological development, they often precede widespread industry adoption and workforce transformation. Analyzing patent trends can therefore offer early indicators of technological directions that may influence future occupational demand. However, effectively linking complex patent information to real-world job roles remains a challenging task.
+Occupational datasets, such as those describing job titles, skills, and task-level responsibilities, offer another rich source of labour market information. These datasets capture the functional aspects of work, detailing what individuals actually do within specific occupations. When combined with technological data, occupational descriptions can help reveal how innovation reshapes job tasks rather than eliminating or creating jobs outright. Understanding job demand at the task level is particularly important, as technological change often modifies specific responsibilities within roles instead of replacing entire occupations.
+The challenge lies in bridging the semantic gap between technological descriptions found in patent documents and occupational descriptions found in job-related datasets. Patent texts and job task descriptions are written for different purposes, using distinct terminologies and levels of abstraction. Traditional keyword matching or rule-based approaches struggle to capture deeper semantic relationships between these domains. As a result, earlier studies often relied on simplified representations, leading to limited accuracy and reduced interpretability in job demand estimation.
+Recent advances in natural language processing (NLP) and representation learning have opened new opportunities for addressing this challenge. Text embedding techniques enable the transformation of unstructured textual data into numerical vector representations that preserve semantic meaning. By mapping both patent descriptions and occupational texts into a shared embedding space, it becomes possible to quantify semantic similarity between technological innovations and job tasks. This approach allows for a more nuanced understanding of how emerging technologies relate to specific occupational activities.
+Despite these advancements, several challenges persist in embedding-based job demand analysis. Computational complexity remains a significant concern, as high-dimensional embeddings and similarity computations can be resource-intensive. Additionally, the choice of similarity measurement plays a crucial role in determining both accuracy and efficiency. While cosine similarity has been widely adopted due to its simplicity and effectiveness in high-dimensional spaces, it may introduce computational overhead when applied to large-scale datasets. Exploring alternative similarity measures that balance accuracy and efficiency is therefore an important area of investigation.
+Another critical consideration is the interpretation of job demand signals derived from technological data. An increase in technological activity related to a particular domain does not always translate directly into immediate employment growth. In some cases, technological capital accumulation may signal future job expansion, while in others it may indicate automation or task substitution. Consequently, job demand estimates based on technological data should be understood as indicators of potential labour market shifts rather than direct measures of employment levels.
+Furthermore, most existing job demand studies focus on job titles or occupational categories, which may obscure important changes occurring at the task level. As jobs increasingly evolve through task reconfiguration, analyzing demand at finer granularity can provide deeper insights into workforce transformation. Task-level analysis allows researchers to observe how specific skills and responsibilities gain or lose relevance over time, offering valuable guidance for curriculum design, reskilling initiatives, and workforce planning.
+In this context, integrating patent-based technological signals with task-oriented occupational data using advanced text embeddings represents a meaningful direction for job demand research. Such an approach enables systematic analysis of how technological innovation influences the demand for specific job tasks and occupations over time. By grounding job demand estimation in both technological and occupational evidence, this perspective offers a more comprehensive understanding of labour market dynamics.
+Overall, the convergence of patent analytics, occupational data, and text embedding techniques marks a significant step toward more robust and forward-looking job demand estimation. As labour markets continue to be shaped by rapid technological change, developing scalable and interpretable methods for linking innovation to workforce demand remains essential. This line of research contributes not only to academic understanding but also to practical decision-making in education, policy, and industry, supporting proactive adaptation to the future of work.
+
+1.1 HOW MACHINE LEARNING WORKS
+To begin with, this and computer science and, more particularly, AI and its subset called machine learning focuses on the collection of data and making use of algorithms to accomplish the objective of replicating the human learning processes more accurately rather than attempting to entirely imitate them. This is critical for data science as it allows systems to be able to uncover complex relationships within data that can make predictions or classifications automatically, and later using these relationships to make decisions within a business or any other establishment. Such insights are essential, especially for data mining initiatives and can have critical impact on major business development indices.
+However, as the volume of big data is increasing so does the need for data scientists who understand the business perspective and the problems that needs solving and how data can provide the answers to the problems. This is where machine learning becomes relevant as it provides an opportunity to solve all these problems by automating the process through the use of statistical methods in training algorithms to recognize underlying relationships or patterns with data.
+
+1.1.1 Machine Learning Algorithms
+There are three important principles on which machine learning algorithms evolve.
+1.	A Decision Process. 
+This is the formulization of the problem which has to be solved by the machine learning. The problem solving begins with the identification of what the problem is and this means stating what are the objectives of the problem
+2.	An Error Function
+The algorithm’s predictions are ascertained with the aid of the error function. The error function is an evaluation tool, which verifies the efficiency of the model based on the output in relation to the available known situations and indicates places where improvements can be made in the model.
+
+3.	A Model Optimization Process
+During the optimization process, the already defined model is employed to enhance its accuracy by modifying parameters, for instance, weights, that determine the alignment of the model with the data. The model conducts its own evaluation, causes some changes which are afterward subjected to further evaluation, and repeats everything until it fully satisfies itself with the accuracy of its prediction, or the process exceeds some limits preset.
+
+ 
+1.1.2 Types of Machine Learning Methods
+Supervised Machine Learning
+Initiating with labelled data leads to supervised learning algorithms, thereby informing the input and the output. In this manner, the model is able to understand the rules and the relationships of the data so as to classify patterns and provide predictions of unseen data. Adding the data would energizes the model to make weight adjustments to the parameters so as to better the performance during the training phase. Cross-validation is adopted for balancing cases where overfitting (not too general) and underfitting situations (too general) are avoided.
+Unsupervised Machine Learning
+On the contrary, unsupervised learning involves working with un-labelled sets of data. Such algorithms examine the input data to discover and cluster the data into groups or structures that were not taught to them. This makes it very useful for exploratory data analysis, for market segmentation, cross-marketing, or for recognizing images and patterns.
+Semi-Supervised Learning
+To do this, semi-supervised learning bridges supervised and unsupervised learning by employing a few labeled data and lots of unlabeled data. The final understanding of the academic efforts is achieved through feature extraction and image collection from the labeled files, hence the model is able to understand the unreferred files. This model proves useful in situations where the labeled data is scarce or the processes of labeling data is expensive or infeasible.
+1.1.3 Applications of Machine Learning
+1.	Voice Identification
+Automatic Speech Recognition (ASR) also known as voice recognition is that aspect of natural language processing (NLP) wherein spoken words are converted to written texts. This technology is quite widely used on portable devices, for instance, mobile phones, where people are able to do voice searches on devices such as Siri and can also send text messages without using their hands.
+
+2.	Customer support
+Customer interaction and engagement are being revolutionized by AI powered chatbots. Customers can be assisted on sites and across social media platforms. These AI powered bots can answer frequently asked questions about shipping conditions, give fitting and size suggestions, and recommend goods to buy, all of which help to maximize customer interaction. These can include ecommerce virtual agents, slack and facebook messenger bots, and voice interface systems.
+3.	Vision AI
+With the help of computer vision, systems can analyze faces, videos and other visual aspects to gain an understanding of the situation at hand. Unlike simple image recognition, such approaches can view pictures and videos and consider them for decision making. These include:
+• Tagging of pictures posted on social media sites.
+• Healthcare radiology imaging.
+• Automobiles with automated driving features in the automobile sector.
+4.	Virtual shopping assistants
+Past behavioral data of users is outputted by an AI algorithm and then analyzed to find valuable insights which can be used to strategically target users. This is most common in e-commerce stores where clients are offered recommendations about items that can be purchased in addition to what the user initially intended to buy.
+5.	Stock trading robots
+The new trading platforms that have been developed focus on algorithmic trading of stocks while an AI powered engine assembles the stock portfolio. Daily, these computers can place hundreds of thousands or millions of trades, making them suitable for stock markets.
+
+
+1.1.4 WHAT IS DEEP LEARNING?
+Deep learning is a subfield of AI that engages people's attention the most today. This is the case because deep learning allows the automation of tasks such as image classification, speech recognition, object detection, and content description. In short, deep learning allows machines to comprehend data in a more advanced way.
+For example, deep learning is used in image classification, speech recognition, object detection, and content analysis. The exponential growth can be attributed to several factors:
+Key Drivers of Deep Learning Advancements
+1.	Algorithmic Improvements
+The innovations in the algorithms have drastically increased the usability of the deep learning models.
+2.	New Machine Learning Approaches
+The methodologies have evolved over the years, and that has retained the prediction accuracy of the models as well as the decisions made.
+3.	Specialized Neural Networks
+New formats of the neural networks have been created to enable the performance of certain functions such as document translation or photos categorization to these networks.
+4.	Abundance of Metadata
+The availability of such data is practically a revolution and includes the following types:
+•	Streaming data from IoT devices;
+•	Textual data from social media;
+•	Professional notes like physicians' notes and investigative transcriptions.
+These data sources constitute a solid basis for constructing and deep-layered neural networks.
+
+ 
+1.1.5 How Deep Learning Works
+The deep learning paradigm has the ability to bring revolution in advancement of the field analytics. Deep learning treats the problem differently, as in this approach instead of being explicitly coded the whole program detailing how the problem can be solved, the clear problem, in this case, is to teach the computer to learn how to solve it by itself.
+Analytical Methodology In Deep Learning
+In traditional analytics, the steps involved in the approach tend to include the following:
+1.	Feature Engineering: Taking out an variable (features) or picking out variables from the data set and recreating ones that can adequately describe the issue.
+2.	Model Development: All the phases of the study until a particular model is completed and picked on.
+3.	Parameter Fitting: Creating the best model that represents the data by changing the parameters of the model.
+Although this approach can yield satisfactory predictive systems, it has weaknesses. The performance of the system is highly influenced by the quality of the features and the model. For example, while constructing a model for detecting fraud, one would say:
+• You start with parameters that are already set and apply data manipulations in order to generate a model.
+• It follows that this process may produce several thousands of variables, which will involve painstaking work to sift through this mass and select the significant ones.
+• Inserting new information requires the application of the entire feature engineering exercise all over again.
+
+
+
+2. LITERATURE SURVEY
+A] Ha, T., & Moon, A., 2025
+Ha and Moon (2025) present a data-driven theoretical foundation for understanding job demand through the lens of technological evolution and semantic representation of textual data. Their work is grounded in the theory that labour market dynamics are not solely driven by economic indicators but are deeply influenced by technological innovation, which can be systematically observed through patent activity. This theoretical perspective positions patents as early signals of technological change that precede observable shifts in occupational demand.
+At the core of this framework is the assumption that technological progress alters the structure of work by modifying job tasks rather than instantly eliminating or creating entire occupations. This aligns with task-based labour theory, which argues that jobs consist of bundles of tasks, each of which may be affected differently by technological advancements. According to this view, analysing job demand at the task level offers higher resolution insights into workforce transformation compared to job-title-based analysis.
+The framework further draws on the theory of knowledge diffusion, which suggests that technological knowledge embedded in patents gradually spreads into industrial practices and labour requirements. Patent classification codes are treated as structured representations of technological domains, reflecting accumulated innovation over time. As the frequency and diversity of these codes increase, they signal growing technological capital in specific areas, which may influence corresponding occupational tasks.
+Another theoretical pillar of the study is semantic similarity theory. Ha and Moon emphasize that textual descriptions of patents and occupational tasks share latent semantic relationships that cannot be captured through surface-level keyword matching. Instead, these relationships exist in a high-dimensional semantic space, where meaning is derived from contextual usage rather than exact word overlap. This theory justifies the use of text embeddings to model conceptual proximity between technology descriptions and job tasks.
+The authors also rely on distributed representation theory, which posits that linguistic meaning is encoded across multiple dimensions rather than single features. Within this framework, each job task and patent description is represented as a vector composed of numerous weighted semantic attributes. The similarity between tasks and technologies is therefore understood as the alignment of these distributed representations rather than direct textual equivalence.
+From a labour economics perspective, the framework incorporates the idea that technological capital does not directly equate to employment growth. Instead, rising technological intensity may indicate one of several outcomes: increased labour demand, future demand potential, or automation-driven substitution. This ambiguity is acknowledged as an inherent characteristic of technology-driven labour analysis, reinforcing the need for contextual interpretation rather than deterministic conclusions.
+The study also builds on clustering theory to evaluate the quality of semantic representations. By grouping occupational descriptions into clusters aligned with known job families, the framework assumes that effective embeddings should preserve occupational structure in semantic space. Normalized Mutual Information (NMI) is theoretically justified as a measure of how well learned representations reflect real-world occupational classifications.
+Another key theoretical aspect is the aggregation principle applied to task-level demand. Individual job tasks are assumed to contribute unequally to overall job demand, depending on their relevance and frequency. This aligns with weighted aggregation theory, which states that composite indicators should reflect the relative importance of their components. Core tasks are thus given higher theoretical weight than supplemental tasks when estimating occupational demand.
+The framework further integrates temporal analysis theory by examining changes in patent activity across years. Job demand is conceptualized as a dynamic construct that evolves alongside technological trajectories. By observing longitudinal patterns in patent classifications, the framework assumes that shifts in technological emphasis can be translated into temporal changes in task and job demand.
+Validation theory also plays a significant role in the framework. Ha and Moon argue that model-based estimations must be assessed against external empirical data to ensure reliability. Instead of direct numerical comparison, the framework adopts representational similarity validation, where structural alignment between estimated demand vectors and real employment data is evaluated. This reflects the theoretical understanding that relative patterns are often more informative than absolute values in complex socio-technical systems.
+The framework implicitly incorporates human capital theory by recognizing that changes in job demand influence skill requirements, education pathways, and workforce planning. As task demand shifts, workers must adapt by acquiring new competencies aligned with emerging technologies. Thus, the framework connects technological innovation with long-term workforce development considerations.
+Another theoretical dimension is interpretability theory. The authors acknowledge that quantitative estimates alone cannot fully explain labour market outcomes. The framework therefore emphasizes cautious interpretation, encouraging the integration of expert judgment and complementary indicators such as wages, employment levels, and graduation statistics. This reflects the belief that labour markets are socio-technical systems requiring multi-perspective analysis.
+Finally, the theoretical framework positions itself within computational social science, combining methods from natural language processing, labour economics, and innovation studies. It assumes that large-scale textual data can be systematically analyzed to reveal hidden patterns in labour market evolution. By uniting these disciplines, Ha and Moon establish a conceptual foundation for understanding job demand as an emergent property of technological progress, semantic relationships, and occupational structure.
+In summary, the theoretical framework proposed by Ha and Moon (2025) conceptualizes job demand as a technology-driven, task-oriented, and semantically measurable phenomenon. It integrates theories of technological change, task-based labour analysis, semantic representation, and validation to provide a comprehensive lens for analyzing workforce evolution in the context of rapid innovation.
+B] Montobbio, F., Staccioli, J., Virgillito, M. E., & Vivarelli, M., 2024
+Montobbio et al. (2024) develop a theoretical framework grounded in the relationship between automation technologies and occupational exposure, emphasizing how technological progress reshapes labour demand through task substitution rather than direct job displacement. Their work builds on the foundational idea that technological change operates unevenly across occupations, influencing specific tasks while leaving others intact. This perspective aligns with modern labour economics, which views jobs as compositions of heterogeneous activities rather than fixed units.
+A central theoretical assumption in this framework is that labour-saving automation can be empirically measured by directly linking technological artifacts to occupational task structures. Patents are treated as formalized representations of technological capabilities, capturing the intent and scope of automation-oriented innovation. The authors argue that patent texts provide insight into which human activities technologies are designed to replicate, assist, or replace, making them suitable proxies for automation exposure analysis.
+The framework is strongly rooted in task-based theory of production. According to this theory, production processes consist of tasks that can be allocated either to human labour or machines. As automation technologies advance, certain tasks become increasingly executable by machines, thereby altering the demand for human labour performing those tasks. Montobbio et al. theorize that understanding labour demand requires identifying which tasks are most technologically exposed rather than simply observing employment trends.
+Another key theoretical dimension is the concept of occupational heterogeneity. The framework assumes that even within the same occupation, workers may face different levels of automation exposure depending on task composition. This challenges traditional occupation-level analysis and supports a more granular approach that focuses on task-level measurement. Such granularity allows for more precise identification of vulnerable and resilient labour segments.
+Semantic representation theory underpins the methodological reasoning of the framework. Patent descriptions and job task descriptions are assumed to share latent conceptual meanings that can be uncovered through textual similarity analysis. Instead of relying on predefined dictionaries or expert-coded mappings, the framework assumes that meaning emerges from patterns of language use, enabling scalable and objective comparison between technological and occupational texts.
+The authors also integrate innovation diffusion theory into their framework. Technological change is not considered an instantaneous shock but a gradual process through which innovations diffuse into industries and workplaces. Patent activity reflects early-stage innovation, while changes in job tasks occur as technologies mature and are adopted. This temporal gap is theoretically important, as it allows patent-based indicators to serve as leading signals of future labour market change.
+From an institutional economics perspective, the framework recognizes that labour market outcomes are shaped by regulatory, organizational, and educational contexts. Automation exposure does not automatically result in job loss; instead, institutions mediate how technology is implemented and how workers adapt. This theoretical stance prevents deterministic interpretations and emphasizes the contingent nature of technological impacts on employment.
+The framework also draws from skill-biased technological change theory. It assumes that automation disproportionately affects routine and codifiable tasks, while non-routine, cognitive, and social tasks remain relatively resilient. By mapping patents to task descriptions, the framework seeks to identify which skill categories are increasingly targeted by automation technologies, thereby revealing shifts in skill demand.
+Measurement theory plays a crucial role in the framework’s structure. Montobbio et al. argue that exposure to automation should be measured directly rather than inferred indirectly from wage or employment outcomes. This theoretical position challenges outcome-based approaches and supports the construction of exposure indices based on technological-task alignment. Such indices aim to capture potential impact rather than realized labour market effects.
+Another theoretical element is aggregation logic. Task-level exposure measures are aggregated to the occupational level using weighted schemes that reflect task importance. This aligns with composite indicator theory, which emphasizes that aggregated measures should preserve the relative contribution of underlying components. The framework assumes that occupations with higher cumulative exposure scores face greater transformation pressure.
+The framework further incorporates comparative analysis theory by enabling cross-occupation and cross-sector comparisons. By applying a consistent task-technology mapping approach, the framework allows researchers to systematically compare automation exposure across diverse labour categories. This comparative capability is theoretically important for identifying structural patterns in labour market transformation.
+Interpretive caution is explicitly embedded within the framework. The authors emphasize that high automation exposure does not necessarily imply negative employment outcomes. Instead, it may indicate task reallocation, productivity gains, or the emergence of complementary roles. This theoretical stance aligns with augmentation theory, which views technology as potentially enhancing rather than replacing human labour.
+The framework also reflects dynamic systems theory, viewing the labour market as an evolving system influenced by feedback loops between technology, skills, and organizational practices. Automation changes task demand, which influences training and hiring, which in turn affects how technologies are deployed. This recursive process underscores the complexity of technology-labour interactions.
+Finally, the framework contributes to computational labour analysis by demonstrating how large-scale textual data can be used to operationalize abstract economic theories. By transforming qualitative descriptions into quantitative indicators, Montobbio et al. bridge the gap between theory and empirical measurement. Their framework provides a structured lens for understanding how automation technologies reshape labour demand through task-level exposure rather than simplistic job elimination narratives.
+In essence, the theoretical framework proposed by Montobbio et al. (2024) conceptualizes labour demand as a function of task-level automation exposure mediated by institutional, skill-based, and temporal factors. It advances labour market theory by offering a systematic, technology-centered approach to measuring how innovation influences the future of work.
+C] Percia David, D., Moreno, S. A., Maréchal, L., Maillart, T., & Mermoud, A., 2023
+Percia David et al. (2023) propose a theoretical framework that interprets job demand as an outcome of structural interactions between technological development and labour market needs. Their work is grounded in the premise that labour demand is increasingly shaped by the co-evolution of skills and technologies, particularly in domains driven by digitalization and cybersecurity. Rather than viewing employment trends as isolated economic phenomena, the framework conceptualizes labour demand as embedded within a network of interdependent technological and occupational relationships.
+A central theoretical concept in this framework is the representation of the labour market as a bipartite system. One side of the system consists of job roles and required skills, while the other comprises technological artifacts and innovation indicators. This structure reflects systems theory, where complex outcomes emerge from interactions among multiple components rather than linear cause-and-effect relationships. Labour demand is therefore understood as an emergent property of these interconnected systems.
+The framework draws heavily from network theory, which assumes that relationships between entities carry more explanatory power than isolated attributes. By modeling jobs and technologies as nodes connected through shared skills or knowledge domains, the authors theorize that labour market demand can be inferred from the strength and density of these connections. Occupations that are strongly linked to rapidly evolving technologies are expected to experience shifts in demand intensity.
+Another foundational element of the framework is skill proximity theory. The authors assume that jobs requiring similar skill sets tend to cluster within the labour market network. When technological innovation expands within a cluster, demand is likely to propagate across related occupations. This theoretical assumption enables the identification of emerging job roles by observing changes in skill adjacency rather than waiting for explicit job creation signals.
+The framework also integrates innovation signaling theory. Patent activity and technological classifications are interpreted as signals that reveal the direction and intensity of technological investment. These signals are assumed to influence organizational hiring decisions as firms seek to acquire human capital aligned with new technologies. Thus, technology-related data become leading indicators of labour demand shifts.
+From a labour economics standpoint, the framework aligns with the theory of endogenous skill formation. It assumes that labour demand and skill supply evolve together, influenced by educational institutions, industry requirements, and technological change. As new technologies gain prominence, demand for associated skills increases, prompting adjustments in training and workforce composition. This reciprocal relationship underscores the dynamic nature of labour markets.
+The framework also incorporates task modularity theory. Jobs are assumed to consist of modular tasks that can be recombined or reallocated as technologies evolve. Digitalization enables finer task decomposition, allowing certain components of work to be automated while others remain human-driven. By analyzing task-level relationships within the network, the framework captures subtle transformations that may not be visible at the occupation level.
+Another theoretical pillar is uncertainty theory. The authors recognize that technological adoption introduces uncertainty into labour market forecasting. Firms may experiment with technologies before fully integrating them, leading to temporary fluctuations in skill demand. The framework accommodates this uncertainty by focusing on probabilistic patterns in job–technology linkages rather than deterministic predictions.
+The framework further draws on information diffusion theory. Knowledge about new technologies spreads through professional networks, job postings, and organizational practices. As this information diffuses, labour demand adjusts incrementally. Network-based modeling is theoretically justified as an effective way to capture these diffusion processes across occupations and industries.
+Comparative labour market theory is also embedded in the framework. By applying the same network-based approach across different regions or sectors, the framework allows for systematic comparison of digitalization impacts. This comparative capability supports the identification of structural differences in labour demand formation across contexts.
+Measurement theory underlies the transformation of qualitative job and skill descriptions into quantitative network representations. The authors assume that textual descriptions can be reliably encoded into features that preserve relational meaning. This assumption enables large-scale analysis while maintaining theoretical consistency with human interpretations of work and skills.
+The framework emphasizes adaptability theory, which views labour markets as adaptive systems responding to external technological stimuli. Workers, firms, and institutions adjust behaviors based on perceived technological trajectories. Labour demand is therefore not static but continuously reshaped through feedback loops involving skill acquisition, hiring practices, and innovation investment.
+Another theoretical dimension is resilience theory. The framework assumes that some occupations exhibit structural resilience due to diversified skill requirements or low technological substitutability. Network centrality measures are theoretically linked to resilience, as centrally connected occupations may adapt more effectively to technological change.
+The authors also integrate foresight theory by framing labour demand estimation as a predictive exercise aimed at anticipating future needs rather than explaining past trends. Network evolution patterns are used to infer potential demand trajectories, aligning with strategic workforce planning objectives.
+Finally, the framework contributes to computational social science by demonstrating how complex labour market theories can be operationalized using large-scale data and network analytics. It bridges theoretical constructs from economics, sociology, and information science to offer a holistic view of job demand formation in digitally driven economies.
+In summary, the theoretical framework proposed by Percia David et al. (2023) conceptualizes job demand as a network-driven, skill-mediated, and technology-responsive phenomenon. By emphasizing relationships, adaptability, and diffusion processes, the framework provides a robust lens for understanding how digital transformation reshapes labour demand over time.
+D] Ha, T., Lee, M., Yun, B., & Coh, B.-Y., 2022
+Ha et al. (2022) establish a theoretical framework that interprets job demand as a consequence of technological change captured through patent information and linguistic representations of occupational data. Their framework is grounded in the belief that technological innovation reshapes labour markets in structured yet uneven ways, influencing the demand for specific jobs based on their technological relevance. Rather than relying solely on economic indicators, the authors position patents as objective and early indicators of technological trajectories that precede observable labour market changes.
+A foundational element of this framework is the theory of technological capital accumulation. Patents are viewed as repositories of accumulated technological knowledge, with increases in patent activity signaling intensified innovation within particular domains. The framework assumes that occupations associated with rapidly growing technological capital are more likely to experience changes in demand, either through expansion, transformation, or task reconfiguration. This theoretical stance emphasizes innovation as a primary driver of labour market evolution.
+The framework is closely aligned with task-based labour theory, which argues that jobs are composed of multiple tasks, each of which may be affected differently by technological progress. Ha et al. conceptualize job demand not as a binary outcome but as a gradient shaped by the extent to which job-related tasks align with emerging technologies. This perspective allows for a nuanced understanding of labour demand that accounts for partial automation and task augmentation.
+Semantic similarity theory plays a central role in the framework. The authors assume that textual descriptions of patent classifications and job information contain latent semantic relationships that reflect real-world technological relevance. These relationships are not always explicit but can be uncovered through vector-based text representations. Meaning is thus treated as contextual and distributed across linguistic dimensions rather than confined to specific keywords.
+The framework also draws from distributed representation theory, which posits that language meaning is encoded across multiple features within a high-dimensional space. In this context, job descriptions and patent texts are represented as numerical vectors whose relative positions indicate conceptual similarity. This theoretical assumption justifies the use of embedding techniques to compare heterogeneous textual sources in a unified representational space.
+Another key theoretical aspect is innovation diffusion theory. Technological ideas documented in patents are assumed to diffuse gradually into industries and occupations. This diffusion process creates a temporal lag between patent activity and observable labour market effects. The framework leverages this lag by treating patent trends as leading indicators that can inform forward-looking job demand analysis.
+The framework incorporates principles from labour demand elasticity theory. It assumes that different occupations respond differently to technological stimuli depending on their adaptability, skill composition, and institutional context. Some jobs exhibit high elasticity, showing rapid demand shifts in response to innovation, while others remain relatively stable. This heterogeneity is central to understanding uneven labour market outcomes.
+Clustering theory is used as a conceptual validation mechanism within the framework. The authors argue that if textual representations accurately capture occupational meaning, then jobs belonging to similar families should naturally cluster together in semantic space. This assumption provides a theoretical basis for evaluating representation quality without relying solely on external labels.
+Measurement theory underpins the framework’s approach to quantifying job relevance. Instead of measuring employment outcomes directly, the framework measures technological proximity between patents and occupations. This reflects the theoretical belief that exposure to technology is a meaningful construct that precedes and shapes actual labour demand changes.
+The framework also integrates aggregation theory, assuming that job-level demand can be inferred by aggregating task-level or description-level technological relevance. This aggregation is not uniform; rather, it reflects the relative importance of different components of a job. Such weighted aggregation aligns with composite index theory commonly used in socio-economic measurement.
+From a methodological theory perspective, the framework emphasizes scalability and objectivity. By relying on structured patent data and standardized occupational descriptions, the approach minimizes subjective bias inherent in expert-based forecasting methods. This aligns with positivist research traditions that prioritize reproducibility and data-driven inference.
+The authors further acknowledge the role of institutional mediation theory. Technological relevance does not automatically translate into employment growth or decline; instead, institutions such as education systems, labour regulations, and organizational practices mediate outcomes. This theoretical recognition prevents deterministic interpretations of technology–labour relationships.
+Temporal dynamics theory is another important component. Job demand is conceptualized as a time-dependent variable that evolves alongside technological trajectories. By examining longitudinal patent trends, the framework captures how sustained innovation influences occupational relevance over extended periods rather than producing immediate shocks.
+The framework also reflects complementarity theory, which suggests that technology can enhance human labour rather than replace it. High technological relevance may indicate increased demand for human expertise to design, manage, or integrate new technologies. This interpretation broadens the analytical scope beyond automation-centric narratives.
+Interpretive theory is embedded through cautious framing of results. The authors stress that technological relevance scores represent potential influence rather than guaranteed outcomes. This theoretical stance emphasizes analytical humility and the importance of contextual interpretation when applying quantitative indicators to complex social systems.
+Finally, the framework contributes to interdisciplinary theory by integrating insights from innovation studies, labour economics, and computational linguistics. It demonstrates how abstract theoretical concepts can be operationalized using textual data and machine learning techniques. By doing so, Ha et al. provide a conceptual bridge between technological innovation analysis and labour market theory.
+In summary, the theoretical framework proposed by Ha et al. (2022) conceptualizes job demand as a technologically mediated, semantically measurable, and temporally dynamic phenomenon. It emphasizes task relevance, innovation diffusion, and contextual interpretation, offering a structured lens for understanding how technological progress reshapes occupational demand over time.
+
+E] Bernaola-Alvarez, C., Giattino, C., & Manheim, D., 2021
+Gruetzemacher et al. (2021) develop a theoretical framework that examines job demand through the lens of artificial intelligence progress and expert uncertainty. Their work is grounded in the belief that labour market forecasting is inherently complex due to the unpredictable nature of advanced technologies. Rather than treating technological change as a linear force, the framework conceptualizes it as an uncertain, socially embedded process that interacts with human expectations, institutional structures, and knowledge limitations.
+A central theoretical foundation of this framework is uncertainty theory. The authors argue that predictions about future job demand are shaped not only by observable technological capabilities but also by subjective beliefs about how those technologies will evolve. Artificial intelligence, in particular, introduces high levels of uncertainty because its trajectory depends on breakthroughs that are difficult to anticipate. This uncertainty fundamentally constrains the reliability of deterministic job demand forecasts.
+The framework draws heavily from expectation formation theory. Experts form expectations about future labour market outcomes based on their professional backgrounds, disciplinary training, and exposure to technological developments. These expectations influence how job demand is perceived and communicated. The framework assumes that differences in expert expectations are not noise but meaningful indicators of structural uncertainty within the labour market.
+Another key theoretical element is sociotechnical systems theory. The authors view labour markets as systems where technology, human behavior, and institutions co-evolve. AI adoption is shaped by organizational choices, regulatory environments, and cultural acceptance, rather than technological feasibility alone. As a result, job demand outcomes emerge from interactions between technical potential and social context.
+The framework incorporates bounded rationality theory, which suggests that even highly skilled experts operate under cognitive and informational constraints. Experts cannot fully assess the long-term impacts of AI on employment due to incomplete data and rapidly changing technological landscapes. This limitation affects forecasting accuracy and leads to divergent predictions across expert groups.
+From a labour economics perspective, the framework challenges traditional skill-biased technological change models. Instead of assuming uniform effects of AI on high- and low-skill jobs, the authors argue that AI may produce non-linear and discontinuous impacts. Some occupations may experience sudden transformation, while others remain stable for extended periods. This theoretical stance emphasizes the need for flexible and adaptive labour market models.
+The framework also integrates epistemic diversity theory. Experts from different fields, such as computer science, economics, and policy studies, possess distinct knowledge bases and interpret technological progress differently. This diversity leads to variation in job demand forecasts. Rather than seeking a single “correct” prediction, the framework values pluralistic perspectives as a way to map the range of plausible futures.
+Risk perception theory plays an important role in the framework. Experts’ views on job displacement or creation are influenced by how they perceive technological risks and opportunities. Those emphasizing automation risks may predict job losses, while those focusing on augmentation potential may anticipate job growth. These perceptions shape narratives around future job demand.
+The framework further draws on foresight theory, which treats forecasting as a strategic exercise aimed at preparing for multiple possible futures rather than predicting a single outcome. Job demand estimation is framed as scenario exploration, where uncertainty is explicitly acknowledged. This approach aligns with long-term workforce planning and policy design under uncertainty.
+Institutional mediation theory is also embedded in the framework. The authors argue that labour market outcomes depend heavily on institutional responses to AI, including education systems, labour regulations, and social safety nets. Technological potential alone does not determine job demand; instead, institutions shape how technologies are deployed and how workers adapt.
+The framework emphasizes adaptive capacity theory, which focuses on the ability of workers and organizations to respond to technological change. Job demand is influenced by how effectively skills can be updated and redeployed. Occupations with higher adaptive capacity are theoretically more resilient to AI-driven disruption.
+Another theoretical dimension is narrative economics. The authors recognize that dominant narratives about AI and jobs influence public perception, investment decisions, and policy actions. These narratives can amplify or dampen perceived job demand trends, creating feedback loops that affect real labour market behavior.
+Measurement theory is addressed indirectly through skepticism toward quantitative precision in job forecasting. The framework argues that numerical estimates may convey false certainty when underlying uncertainty is high. Instead, qualitative insights and probabilistic reasoning are emphasized as more theoretically appropriate tools for understanding AI-driven job demand.
+The framework also reflects ethical theory, particularly concerning responsibility in forecasting. Overstating job loss risks may create unnecessary fear, while understating them may hinder preparedness. The authors argue that ethical forecasting requires transparency about uncertainty and limitations.
+From a systems dynamics perspective, the framework views AI progress and job demand as interconnected through feedback mechanisms. Predictions influence investments in AI, which in turn affect technological development and labour demand. This recursive relationship complicates causal inference and reinforces the need for cautious interpretation.
+Finally, the framework contributes to interdisciplinary labour theory by integrating insights from artificial intelligence research, economics, sociology, and futures studies. It positions job demand estimation as an inherently uncertain endeavor that must balance empirical evidence with expert judgment and scenario thinking.
+In summary, the theoretical framework proposed by Gruetzemacher et al. (2021) conceptualizes job demand as an uncertain, expectation-driven, and institutionally mediated outcome of artificial intelligence progress. By emphasizing uncertainty, diversity of perspectives, and adaptive capacity, the framework offers a nuanced lens for understanding labour market futures in the age of advanced AI.
+ 
+3. SYSTEM ANALYSIS
+3.1 EXISTING SYSTEM
+The existing system estimates job demand using cosine similarity between patent classification codes and occupational descriptions. It relies on traditional embedding techniques to find the semantic relationship between job tasks and patent data. Although this method identifies the impact of technology on labour demand, it requires high computational power and longer processing time. Moreover, cosine similarity sometimes produces less accurate results due to its sensitivity to vector magnitude. These limitations affect large-scale analyses, reducing efficiency and scalability.
+  Disadvantages of Existing system
+1.	High computational cost
+2.	Slower processing speed
+3.	Limited similarity accuracy
+4.	Resource-intensive execution
+5.	Scalability issues arise
+3.2 PROPOSED SYSTEM
+The proposed system enhances job demand estimation by replacing cosine similarity with Manhattan Distance, reducing computational time while maintaining accuracy. Using advanced text embedding models like Linq-Embed-Mistral, the system efficiently matches patent codes with job task descriptions. This extension improves performance by providing faster similarity computations and better adaptability for large datasets. 
+ Advantages of Proposed System
+1.	Faster computation speed
+2.	Improved similarity accuracy
+3.	Lower resource usage
+4.	High validation consistency
+5.	Better scalability performance
+ 
+4. FUNCTIONAL REQUIREMENTS
+Functional requirements form an important part in the sphere of software and systems engineering as it determines the conditions which must be fulfilled in order for the system or any of its components to perform their particular tasks. Explain how inputs are transformed into outputs and what the system is expected to achieve once it is completed. Analytic computations, data creation and even some operational processes would be some instances of these requirements. Functional requirements concern the system in its aspects including but not limited to the performance capabilities while non-functional requirements address specific components and capabilities within a system, such as performance, security, or reliability.
+Functional requirements are typically put forth as the condition “the system must do ,” whereas for non-functional requirements the statement is put in the form of “the system shall be .” These functional requirements are provided in the system design, while non- functional requirements are maintained in the systems’ architectures. Therefore functional requirements controls the application architecture, and non-functional requirements control the technical architecture.
+For the cases above and in real life, functional requirements can be confirmed and further refined through the use cases where the situation is first described. Clients provide their expectations and analysts try to observe, interact and record these expectations. These use cases are instrumental in generating the functional requirements and ensuring that the right functions are performed by the system. These steps of analyses, modeling and validation help to ensure that the requirements are met with expectation of the stakeholders and are possible to be met in reality.
+4. 1 SYSTEM FUNCTIONAL REQUIREMENTS
+1. Data Ingestion and Dataset Management
+The system shall support the ingestion of multiple heterogeneous datasets related to occupational information and technological data. This includes structured datasets such as occupational task descriptions, job titles, and classification codes, as well as unstructured textual data such as patent descriptions. The system must allow secure uploading, validation, and storage of datasets in supported formats. It should ensure data consistency by handling missing values, duplicate records, and inconsistent labeling. Dataset versioning must be supported to allow reproducibility of experiments and comparisons across different data snapshots.
+2. Text Preprocessing and Normalization
+The system shall perform automated text preprocessing to prepare raw textual data for semantic analysis. This includes tokenization, lowercasing, removal of noise such as special characters, normalization of whitespace, and handling of domain-specific terminology. The system must preserve semantic meaning while eliminating irrelevant text artifacts. Preprocessing steps should be configurable to accommodate variations in patent descriptions and occupational task texts, ensuring uniform representation before embedding generation.
+3. Text Embedding Generation
+The system shall generate numerical vector representations of textual data using pretrained text embedding models. It must support loading and applying embedding vectors for both occupational data and technological descriptions. The system should allow seamless integration of externally generated embeddings and enable efficient handling of high-dimensional vectors.
+4. Similarity Computation and Optimization
+The system shall compute semantic similarity between occupational tasks and technological descriptions using configurable similarity measures. It must support efficient computation to handle large-scale datasets without performance degradation. The system should allow switching between similarity metrics and optimize computation time while maintaining semantic accuracy. 
+5. Job Task Demand Estimation
+The system shall estimate job task demand by aggregating similarity scores with technology occurrence data over time. It must calculate task-level demand values for each year based on technological activity trends. The system should support ranking of tasks based on estimated demand and identify both high-demand and low-demand task categories. This requirement enables granular analysis of labour market dynamics at the task level.
+6. Job-Level Demand Aggregation
+The system shall aggregate task-level demand estimates to derive overall job-level demand. It must account for task relevance within each occupation and combine task contributions using weighted aggregation logic. The system should generate ranked lists of occupations based on estimated demand and support comparative analysis across years.
+7. Model Evaluation and Validation
+The system shall include mechanisms to evaluate and validate the quality of embedding representations and demand estimates. It must support clustering-based evaluation and calculation of performance metrics to assess semantic consistency. Validation against external or reference employment indicators should be supported to ensure reliability.
+8. Visualization and Analytical Reporting
+The system shall generate visual representations of job and task demand trends. It must support charts, graphs, and tabular summaries that clearly communicate demand patterns over time. Visualization components should enable comparison between occupations, tasks, and time periods. The system should provide exportable reports suitable for academic, policy, or organizational use.
+9. User Interaction and Prediction Interface
+The system shall provide an interactive interface allowing users to input task descriptions and receive predicted job associations and demand indicators. It must process user inputs securely and return interpretable results, including similarity scores and ranked job outputs. The interface should support both batch input and individual queries, enabling practical usage beyond static analysis.
+10. System Scalability, Performance, and Security
+The system shall be designed to scale efficiently with increasing data volume and model complexity. It must manage computational resources effectively to ensure stable performance during large-scale analysis. Secure access control, data protection, and reliable execution are mandatory. 
+5. NON-FUNCTIONAL REQUIREMENTS 
+The non-functional requirements of a system indicate the maintained quality or response time of a system or application. For instance, a user may be configured to a system and once selected the system is expected to respond within a certain time frame: 3 seconds for 10,000 users concurrent. In a brief statement, these types of requirements explain how the system is going to fulfill its operations.
+Just like deadlines in real life, they are a must while working on any product or delivering services. Many would refer to these as constraints, as these do set limitations or boundaries within which the design needs to operate. One notion of philosophy in design states ‘out of sight, out of mind’ and these graphic leaders allow exactly that so the consumer focuses on the primary objectives. Without NFRs, consumers could easily become unsatisfied due to the inefficiency of a product.
+5.1 REQUIREMENTS
+1. Performance Efficiency
+The system shall maintain high performance efficiency while processing large-scale textual and numerical datasets. Embedding loading, similarity computation, and demand estimation operations must execute within acceptable time limits to support practical analysis. The system should minimize computational overhead by efficiently managing memory and processing resources, ensuring smooth execution even when handling high-dimensional embedding vectors and large similarity matrices.
+2. Scalability
+The system shall be scalable to accommodate increasing volumes of occupational data, patent data, and embedding representations. It must support growth in dataset size without requiring significant architectural changes. Scalability should be ensured both vertically, by efficiently utilizing additional computational resources, and horizontally, by supporting modular expansion. This enables long-term usability as data sources expand over time.
+3. Reliability
+The system shall operate reliably under normal and peak workloads without unexpected failures. It must ensure consistent output for identical inputs and preserve system stability during prolonged execution. Error-handling mechanisms should detect and recover from runtime issues such as missing files, corrupted data, or interrupted processing, thereby maintaining uninterrupted analytical workflows.
+4. Accuracy and Consistency
+The system shall maintain a high level of accuracy and consistency in all analytical results. Similarity calculations, demand estimates, and ranking outputs must be reproducible across repeated executions using the same data and configurations. The system should ensure numerical stability during computations to prevent rounding errors or inconsistencies that could affect interpretation of job demand trends.
+5. Usability
+The system shall be designed with usability in mind, enabling users with limited technical expertise to operate it effectively. Interfaces should be intuitive, clearly labeled, and logically structured. Outputs must be presented in an interpretable format, using readable tables, visual summaries, and descriptive labels. This ensures that analysts, researchers, and decision-makers can easily understand and apply the results.
+6. Maintainability
+The system shall be maintainable to allow future updates, bug fixes, and enhancements with minimal effort. Code components must follow modular design principles, enabling individual modules to be updated without affecting the entire system. Proper documentation and consistent coding standards should be maintained to support long-term system evolution and developer collabouration.
+7. Portability
+The system shall be portable across different computing environments, including local machines and server-based platforms. It must run consistently regardless of operating system or deployment configuration. Dependencies should be clearly defined to ensure smooth installation and execution in varied environments, supporting flexible usage and broader accessibility.
+8. Security
+The system shall ensure data security and protection against unauthorized access. User inputs, uploaded datasets, and analytical results must be handled securely to prevent data leakage or misuse. Authentication mechanisms should be employed where required, and the system should safeguard against common vulnerabilities such as unauthorized file access or malicious input injection.
+9. Availability
+The system shall be available for use whenever required, minimizing downtime and operational interruptions. It should support continuous operation during extended analytical tasks and allow quick recovery in the event of system restarts. Availability requirements ensure that users can depend on the system for time-sensitive analysis and decision-making processes.
+10. Extensibility
+The system shall be extensible to support future enhancements without major redesign. It must allow integration of new embedding models, similarity measures, datasets, and analytical modules. This flexibility ensures that the system remains relevant as technologies evolve and new research requirements emerge, supporting continuous improvement and innovation.
+
+
+
+ 
+6. FEASIBILITY STUDY
+The feasibility study succinct addresses whether the envisaged proposal is workable by presenting an outline and cost figures for the project. This phase is very important in determining whether the system is in concurrence with the objectives of the organization and whether it is appropriate. For purposes of carrying out a feasibility study, there need to be always criteria to be satisfied, in this case, that of understanding the system requirements. It covers the following areas:
+1.	Economic Feasibility:
+This assesses the economic worth of the system. The expenditures incurred in the engagement of such R&D activities should be able to cover the cost incurred. The system is constructed in a way that eliminates many unnecessary costs by using free alternatives and restricting tailor made procurements.
+2.	Technical Feasibility:
+This assesses how the system’s technical needs correspond to what is available. The completion of the system development avoids many technical specifications to minimize the alteration of the system at the time of implementation.
+3.	Social Feasibility:
+This measures a system in terms of the aptness or readiness of users to use the system. Training and tutorials build users’ self familiarity with the system aiding their seamless adoption of the system in their day to day work processes. User encouragement to give feedback increases the chances of enhanced adoption experience.
+
+
+ 
+7. REQUIREMENT SPECIFICATION
+
+
+8.1 Hardware Requirements
+
+		➢ 	PROCESSOR                    	-  Intel Core i3/i5
+		➢	RAM                            	 - 8 GB 
+		➢	HARD DISK (SSD)               	 - 512 GB
+
+8.2 Software Requirements
+
+➢	Operating system 		: Windows 11/ 10
+➢	Coding Language		: PYTHON, Jupyter Notebook
+ 
+8. SYSTEM DESIGN
+8.1 METHODOLOGY
+Step 1: Problem Definition and Objective Setting
+The first step involves clearly defining the problem of job demand estimation in the context of technological change. The objective is to understand how advancements in technology influence occupational tasks and overall job demand. This step establishes the scope of analysis, focusing on task-level relationships rather than only job titles, ensuring a more granular and realistic understanding of labour market dynamics.
+Step 2: Occupational Data Collection
+Occupational data are collected from standardized job databases that contain job titles, task descriptions, and task relevance information. These datasets represent real-world job responsibilities and provide a structured view of how work is organized across occupations. The data are examined to ensure completeness and relevance before further processing.
+Step 3: Technological Data Collection
+Technological innovation data are gathered from patent repositories containing patent descriptions and classification codes. Patent data are chosen because they reflect early-stage technological developments. Each patent record includes textual descriptions that explain the functionality and purpose of the technology, making them suitable for semantic analysis.
+Step 4: Data Cleaning and Validation
+Both occupational and patent datasets are cleaned to remove incomplete records, duplicates, and inconsistent entries. Missing values are handled appropriately, and irrelevant fields are excluded. This step ensures that only high-quality and reliable data are used in subsequent stages, reducing noise and analytical errors.
+Step 5: Text Preprocessing
+All textual data are preprocessed to standardize format and improve semantic consistency. This includes converting text to a uniform case, removing unnecessary symbols, correcting spacing issues, and ensuring consistent encoding. Domain-specific terminology is preserved to maintain contextual meaning while eliminating irrelevant textual artifacts.
+Step 6: Text Embedding Preparation
+Pretrained text embedding models are selected to convert occupational task descriptions and patent texts into numerical vector representations. These embeddings capture semantic meaning beyond simple keyword matching. Separate embeddings are generated for job tasks and technological descriptions and stored for efficient reuse.
+Step 7: Embedding Quality Evaluation
+To ensure embeddings accurately represent occupational meaning, job-related embeddings are clustered using an unsupervised clustering algorithm. The resulting clusters are compared with known occupational categories. This evaluation verifies that semantically similar jobs are grouped together, confirming the quality of embeddings.
+Step 8: Semantic Similarity Computation
+Semantic similarity between job task embeddings and technology embeddings is calculated using a suitable similarity measure. This produces a similarity matrix that quantifies how closely each job task aligns with different technological domains. Higher similarity values indicate stronger technological relevance.
+Step 9: Year-wise Technology Frequency Analysis
+Patent data are analyzed on a year-by-year basis to determine how frequently each technological classification appears over time. This step captures trends in technological activity and provides a temporal dimension to the analysis, enabling dynamic job demand estimation.
+Step 10: Job Task Demand Estimation
+For each year, task-level demand is calculated by combining similarity scores with technology frequency data. Tasks that strongly align with frequently occurring technologies receive higher demand scores. This step produces annual demand values for each job task, reflecting technology-driven influence.
+Step 11: Task Demand Ranking
+Estimated task demand values are ranked to identify high-demand and low-demand tasks. Ranking helps in understanding which job tasks are gaining relevance and which are declining due to technological shifts. This step supports comparative analysis across tasks.
+Step 12: Job-Level Demand Aggregation
+Task-level demand scores are aggregated to estimate overall job demand. Tasks are weighted based on their relevance within each occupation, ensuring that core tasks contribute more significantly than supplementary tasks. The aggregated values represent job-level demand trends.
+Step 13: Job Demand Ranking
+Jobs are ranked based on aggregated demand scores to identify occupations with increasing or decreasing demand. This step provides a clear overview of labour market transformation driven by technological evolution and supports strategic workforce analysis.
+Step 14: Validation of Estimated Demand
+Estimated job demand patterns are validated using external employment or occupational trend data. Structural similarity between estimated demand trends and real-world data is analyzed to assess reliability. Validation ensures methodological soundness and analytical credibility.
+Step 15: Visualization and Interpretation
+Graphs, charts, and tables are generated to visualize task and job demand trends over time. Visualization improves interpretability and enables stakeholders to easily understand complex analytical results. Comparative visual analysis highlights key patterns and insights.
+Step 16: Interactive Prediction Capability
+The system allows users to input new task descriptions. These inputs are preprocessed, embedded, and compared with existing embeddings to predict suitable jobs and demand indicators. This step demonstrates practical usability beyond static analysis.
+Step 17: Result Documentation and Storage
+All computed demand values, rankings, and visual outputs are systematically stored for reporting and future analysis. Proper documentation ensures reproducibility and transparency of the entire methodological process.
+Step 18: Review and Refinement
+The final step involves reviewing the entire workflow for consistency and performance. Any identified limitations are documented, and potential improvements are noted to support future extensions and enhancements.
+8.2 DATASET:
+The O*NET 29.0 Database is a comprehensive occupational information dataset originating from the U.S. Department of Labour’s Occupational Information Network (ONET), one of the most detailed and widely used repositories of job and work characteristic data in the world. ONET is engineered to represent the breadth and complexity of work in the modern economy, offering granular descriptions of occupations, tasks, worker attributes, and work context characteristics across the Standard Occupational Classification (SOC) system. The Kaggle version of the ONET 29.0 database provides the content from the official ONET database released as version 29.0, making it readily accessible for research, data science, and machine learning applications. 
+At its core, the O*NET database serves as an occupational taxonomy that covers thousands of detailed work activities, knowledge elements, skills, abilities, and task statements for hundreds of occupations. Each occupation in the database is associated with a unique SOC code, which links it to a defined position in the broader U.S. occupational classification system. This standardized taxonomy ensures that occupational data can be consistently interpreted, compared, and analyzed across studies and applications. 
+The O*NET 29.0 dataset consists of multiple related files, each containing different types of occupational descriptors. Typical categories include core work activities, detailed task statements, worker characteristics (such as skills and abilities), work context information (e.g., physical and social environments), education and training requirements, tools and technology used, and cross-occupation linkage information. Together, these files capture both the functional components of work (what tasks are performed) and the human aspects (what skills and attributes workers need to perform those tasks). 
+A key component of the O*NET database is the task statements table, which lists specific work activities or tasks that individuals in an occupation typically perform. Each task is described in natural language and may be accompanied by rating scales that measure attributes such as importance and frequency. This detailed task-level information is especially valuable for research that aims to map job responsibilities to skills, technology exposure, or labour market trends. 
+In addition to tasks, the database contains files on knowledge, skills, and abilities (KSAs). These dimensions describe what workers need to know and be able to do in order to successfully perform their jobs. Knowledge categories include domains such as mathematics, engineering, customer service, and computer science, while skills include competencies such as critical thinking, active listening, and complex problem-solving. Abilities capture innate capacities, such as deductive reasoning or manual dexterity, that influence how effectively a worker performs tasks. 
+Another important dataset element is the work context and work activity files. These provide quantitative and qualitative measures of the environment in which work takes place, including physical activities, exposure to hazards, interpersonal interactions, and cognitive demands. For example, work context variables might indicate the frequency of contact with customers, the level of decision-making required, or the degree of physical effort involved. These contextual features help researchers understand not just what tasks are done, but the conditions under which they are performed. 
+The O*NET database also contains education, training, and experience data that capture the typical preparation backgrounds for occupations. This includes information on the usual level of educational attainment, on-the-job training requirements, and work experience necessary for proficiency in a given occupation. Job zone classifications, which categorize occupations by the amount of preparation needed, are an example of such data. 
+An additional dimension in the O*NET dataset is technology skills and tools used. These files enumerate the technologies, software, and tools commonly employed in various occupations. They provide insight into how technology is embedded in work processes and are especially relevant for analyses linking technological change to labour demand. 
+The database format typically includes multiple CSV (comma-separated values) files, relationally linked through common identifiers such as SOC codes. Each file represents a specific facet of occupational information, and together they form a multi-table relational dataset. 
+From a data science perspective, the O*NET 29.0 dataset is ideal for text mining, clustering, semantic analysis, and machine learning applications because it includes extensive textual descriptions (e.g., task statements, technology skills) alongside structured numeric ratings and categorical information.
+One of the distinguishing features of O*NET is its content model, a theoretical framework that organizes occupational data into major domains such as worker characteristics, worker requirements, occupation requirements, and workforce characteristics.
+The dataset is widely used in labour economics, workforce planning, skills analysis, and human resources research. For example, researchers use O*NET to study the impact of automation on job tasks, map occupational competencies to labour market outcomes, and develop occupational demand forecasts. The structured nature of the data makes it a reliable foundation for both descriptive and predictive modeling. 
+In practical usage, tasks can be filtered, aggregated, or scored based on importance, frequency, or relevance. Similarly, skill and knowledge ratings can be used to generate competency profiles for occupations. When combined with external data sources such as employment statistics or wage information, O*NET data enables robust analysis of workforce trends, skill gaps, and technological influences on labour markets. 
+The Kaggle version of the O*NET 29.0 database democratizes access to this rich dataset by packaging it in a format that is easily downloadable and ready for analysis with common tools like Python, R, and SQL. Users can load the CSV files into data frames, explore variable distributions, perform text processing on task statements, and derive features for machine learning models. 
+It is important to note that while O*NET 29.0 provides extensive occupational information, its update cycle is periodic, with new versions released as surveys and data collection are refreshed. The Kaggle release corresponds to the 29.0 version, which includes all occupation descriptors compiled up to that release. 
+Overall, the O*NET 29.0 database represents a multi-dimensional occupational knowledge base that combines structured attributes, descriptive text, and standardized classifications to support deep analysis of work and labour dynamics.
+https://www.kaggle.com/datasets/emarkhauser/onet-29-0-database/data
+
+
+8.3 SYSTEM ARCHITECTURE:
+ 
+
+
+Figure 1 Architecture
+
+
+9. UML DIAGRAMS
+
+UML is a model while UML is a modeling language. Unified Modeling Language is an internationally accepted modeling palette which makes it easy to visually express plans, implemented ideas and facts in terms of a system- OO. It is a language, so it can be spoken and written. It is a standardized language and there is no national ownership.
+UML comprises of two basic aspects: a Meta-model and Notation. This has further enabled the specification, visualization, construction and documentation of software artifacts. It moreover fosters business modeling and other non-software systems, placing emphasis graphical notations for better communication of designs of software systems.
+UML adopts the best engineering practices which have been found useful in the modeling of complex and large systems. It is a must in object oriented software engineering for the entire process to be clear, consistent and understandable.
+Goals of UML
+The primary objectives of UML include:
+1.	Enhancing the ability to create and communicate meaningful models by providing an appropriate visual modeling language.
+2.	Introducing provisions for the extendibility and specialization of the basic concepts.
+3.	Guaranteeing freedom with respect to particular programming languages and specific development methodologies.
+4.	Providing a helpful underpinning to make clear the language.
+5.	Facilitating the development of the market of the object-oriented tools.
+6.	Making it possible to use more sophisticated development concepts such as collabourations, frameworks, patterns and components.
+
+
+
+9.1 USE CASE DIAGRAM
+
+A use case diagram in Unified Modeling Language (UML) belongs into class of behavioral diagrams and is obtained through use-case analysis. It graphically represents the functionality of the system by depicting the interactions of the actors towards the achievement of their goals which are modeled as use cases. And, it provides an overview of the dependencies between these use cases.
+The main objective of use case diagrams is to indicate what tasks the system performs for each of its actors, so that, the tasks and responsibilities of the actors in the system are better understood.
+ 
+
+Figure 2 Use case Diagram
+ 
+9.2 CLASS DIAGRAM
+
+As it belongs to specific types within the Unified Modeling Language (UML), a class diagram is categorized as a static structure diagram in computer software construction. This is a system modeling method that models a particular system by displaying its classes (or the sets of objects), their features, methods (or functions), and their inter-relationships.
+Class diagrams portray the containment and interaction of classes and provide no ambiguity about the system's blueprint. This is why they are a valuable resource for the analysis and design of object-oriented software systems.
+
+ 
+Figure 3 Class Diagram
+ 
+
+
+
+ 
+9.3 SEQUENCE DIAGRAM
+
+UML Sequence diagram belongs to a family of interaction diagrams – dynamic models, and documentation as well – that demonstrate how different processes work, connect and in which order they do so. 
+Sequence or an event diagram, it is in most cases called an event scenario or timing diagram. It, therefore, provides an elabourated view of the chronological order of events, how objects cooperated in functions over a given period in order to realize a particular process, or in other words, how the objects of the given system behaved during the realized process. These diagrams are great for depicting the behavior of the system and the subtleties of its interactions.
+
+
+ 
+Figure 4 Sequence Diagram
+
+ 
+9.4 COLLABOURATION DIAGRAM
+A collabouration diagram UML is developed to show the links and communication between objects in the system. As opposed to sequence diagrams that chronologically document the sending of messages, collabouration diagrams concentrate on the design and construction of the objects which are the center of the communication at the time of its development.
+System objects are endowed with different characteristics, and many of them interrelate with one another and form relationships. The collabouration diagram or the communication diagram depicts these relations graphically in order to give information about the object structure of the system. It assists in appreciating the reason for the existence of some objects and their mode of integration with others in the performance of certain defined functions.
+ 
+Figure 5 Collabouration Diagram
+ 
+9.5 ACTIVITY DIAGRAM:
+The activity diagram also contains cases of the communication and interactions of objects for the functional purpose. They include a variety of cases such as events and actions in terms of how they flow as well as how they reach the various systems edges or items.
+UML activity diagrams outline the business requirements of a process from the user perspective in high level details and also the operational processes of the system explaining how different functional units operate in the context of sequential stages. They are a logically inseparable portion of each process model considering the order of operations and making decisions at each logical point associated with movement of information.
+An activity diagram is a fundamental tool in both systems modeling and business processes modeling since it allows any operation to be tracked in a sequential visual representation of its flow.
+ 
+Figure 6 Activity Diagram
+10. TECHNOLOGY DESCRIPTIONS
+
+Python Introduction
+Python is general purpose high level dynamic interpreted programming language that is used for many applications. Python programming requires a different set of skills since it supports the object oriented programming approach. Python is clear, straightforward, and offers a number of high level data structures making it a preferred language for programmers.
+The syntax of the Python language is easy to understand. Its dynamic typing combined with the interpreted nature allows quick jump in application development and scripting. It provides support for multiple paradigms including object oriented, imperative, functional, as well as procedural programming styles to accommodate different project requirements.
+Even if Python has not been targeted for a specific area like web programming, it is possible to utilize its multi-dimensional scope in web design, company solutions, implementing 3D CAD, data analysis, and other purposes. One interesting characteristic of the Python programming language is the fact that it is dynamically typed meaning that variables do not need to be explicitly declared. For example, it is possible to do a = 10 directly.
+Python proves beneficial to the user in more than one way - it did away with the need for a compilation step which in turn minimized the amount of time required for debugging and testing. Due to the efficiency of the edit-test-debug cycle, Python makes the ideal language for prototyping and tweaking designs.
+10.1 PYTHON HISTORY 
+Python Beginning The software was conceived in the second half of the 80s. Its inception can be credited to Guido Van Rossum at Centrum Wiskunde&Informatica (CWI) in the Netherlands. Python was first hit in December 1989 and the first version (0.9.0) was released by van Rossum about February 1991.
+When Python 1.0 came out in 1994, lambda, map, filter, and reduce were introduced. And in the later versions of Python, like 2.0, list comprehensions and the garbage collection system were incorporated.
+In order to rectify major bugs in the language, 3.0 ok, in other words Py3K, was launched on the third day of the last month of the year of 2008. The languages that influenced the design of Python are ABC, which was an exception-handling programming language that interfaced with the Amoeba Operating System, and Modula-3.
+Python has an extremely bright future due to the fact that it encompasses a lot of what its predecessors had while developing into one of the most used programming languages in the whole world.
+
+10.2 PYTHON FEATURES
+Python Characteristics Easy to learn and easy to use:
+Being beginner oriented and developer 100 percent focused, python is relatively easy to learn and use.
+Expressive Language:
+The coding language of Python is declared as highly expressive as it is claimed that it is easy to read and to write.
+Interpreted Language:
+The reason for this is because Python makes use of an interpreter which takes in the line of code and executes it although it may bring out a few challenges in the debugging of codes.
+Cross-platform Compatibility:
+This goes to show that the system has the capacity of being used in different kinds of operating systems such as Windows, Linux, Unix and mac operating systems.
+
+Free and Open Source:
+Any person who wishes to avail Python can find it free for downloading and It is easy to acquire and modify the source code.
+Object-Oriented Programming:
+Object-oriented programming is achievable using Python as it provides support for classes and objects among other implementations.
+Extensible:
+It becomes possible to extend various functionalities and integrate performance improvements by using C/C+= languages with Python environments.
+Large Standard Library:
+If many different types of modules and functions are needed to develop applications quickly, then Python standard library can be a good solution.
+GUI Programming Support:
+It is possible to use Python to program graphical user interfaces.
+Integrated with Other Languages:
+The compatibility and flexibility of the programming language Python is higher as it can work with other languages particularly C, C++, Java languages.
+
+10.3 PYTHON APPLICATIONS
+Since Python is a multipurpose language, it can be used in almost all spheres of software development. Other notable fields where Python has its application include:
+1.	web Applications:
+With its libraries for internet protocols as HTML, XML, JSON, and many others, and frameworks such as Django, Flask, Pyramid, Python is among the most popular languages for web development. Such include PythonWikiEngines, Pocoo and others.
+2.	Desktop GUI Applications:
+Desktops, GUI can be developed using Tkinter, wxWidgets, Kivy and PyQt. For multi touch applications across platforms Kivy is good for such purpose.
+3.	Software Development:
+Programming in Python is widely used in software development as an auxiliary language for such activities as build control, testing, management, etc.
+4.	Scientific and Numeric Computing:
+Libraries like SciPy, Pandas, and IPython are popular for scientific computing, engineering, and mathematical analysis.
+5.	Business Applications:
+Python is used for creating ERP and e-commerce solutions such as Tryton.
+6.	Console-Based Applications:
+Tools like IPython are developed using Python for interactive computing.
+7.	Audio/Video Applications:
+Python can develop multimedia apps like TimPlayer or cplay.
+8.	3D CAD Applications:
+Tools like Fandango are used to create CAD applications.
+
+
+
+10.4 WHY PYTHON
+Python is a versatile, user-friendly, and powerful programming language widely used across industries. Here’s why Python is so popular:
+•	Cross-Platform Compatibility: Python runs on various platforms, including Windows, Mac, Linux, and Raspberry Pi, making it highly portable.
+•	Simple and Readable Syntax: Python’s syntax is simple, clean, and similar to the English language, making it easier for developers to learn and write code.
+•	Less Code, More Functionality: Python allows developers to accomplish tasks with fewer lines of code compared to other programming languages.
+•	Interpreter-Based Language: Python runs on an interpreter, meaning that code can be executed immediately after being written. This makes prototyping faster and more efficient.
+•	Multiple Programming Paradigms: Python supports procedural, object-oriented, and functional programming, offering flexibility to developers.
+Good to Know:
+The latest major version is Python 3, which is used in this tutorial. Although Python 2 is no longer updated (except for security fixes), it remains popular. You can write Python using text editors or Integrated Development Environments (IDEs) like Thonny, PyCharm, NetBeans, or Eclipse for better file management.
+Python Syntax:
+Python was designed for readability, using new lines instead of semicolons and indentation (whitespace) to define scope. This differs from other languages that use semicolons or curly braces.
+
+ 
+10.5 PYTHON INSTALLATION
+Run the Installer:
+To get started, double click the Python executable file that you installed. This will also bring up the Installation Wizard. If you would like to go forward, please select Customize installation
+  
+Select Optional Features:
+The installation will offer additional components to augment the functionality of the software that has been brought over from the preceding window. These features come pre-activated so to proceed simply click Next.
+  
+Advanced Options:
+The following window will show advanced options. These options can be installed according to your requirements though it may take a relatively longer time. To proceed, tick the first box ‘Install for all users’ and click Next.
+ 
+Start the Installation:
+Now that you are in the installation window, click on the Install button in order to start the installation process. You can now start the installation of Python 3.6.6.
+ 
+
+
+
+Run Python:
+To begin the compilation on Python 2 please open the Command Prompt and write python or python3 for Python 3. In case of an error, you need to set the path.
+ 
+Run Python:
+To begin the compilation on Python 2 please open the Command Prompt and write python or python3 for Python 3. In case of an error, you need to set the path.
+ 
+ 
+Add the new path variable in the user variable section.
+ 
+Specify the directory of the installation as per the image given below and add it as PATH in the new variables user section.
+ 
+Restart the Command Prompt:
+Start by opening the CMD again then type python. This time around, the python interpreter shell will initiate and from here it will be possible to issue python commands.
+11. SAMPLE CODE
+#import required packages and classes
+import pandas as pd 
+import numpy as np
+from sklearn.cluster import KMeans
+from sklearn.metrics.cluster import normalized_mutual_info_score
+import seaborn as sns
+import matplotlib.pyplot as plt 
+import timeit
+import warnings
+warnings.filterwarnings('ignore')
+#defining function to calculate NMI scores using Kmeans clustreing with occupational ONET data and job task description data
+def kmeanCluster(job_codes, data, labels):
+    kmeans = KMeans(n_clusters=22, random_state=0)
+    kmeans.fit(job_codes)
+    true_pred = kmeans.labels_
+    kmeans = KMeans(n_clusters=22, random_state=0)
+    kmeans.fit(data)
+    y_pred = kmeans.labels_
+    nmi_score = labels - normalized_mutual_info_score(true_pred, y_pred)
+    return nmi_score
+#function to calculate cosine similarity
+def cosine(vec1, vec2):
+    dot_product = np.dot(vec1, vec2)
+    norm_vec1 = np.linalg.norm(vec1)
+    norm_vec2 = np.linalg.norm(vec2)    
+    if norm_vec1 == 0 or norm_vec2 == 0:
+        return 0  
+    return dot_product / (norm_vec1 * norm_vec2)
+#loading and displayig ONET occupational data
+onet_data = pd.read_csv("Dataset/Occupation Data.txt", sep="\t")
+onet_data
+1016 rows × 3 columns
+#loading and displayig patent job description dataset
+patent_data = pd.read_csv("Dataset/Task Statements.txt", usecols=['O*NET-SOC Code', 'Task'], sep="\t")
+patent_data
+18796 rows × 2 columns
+#loading & displaying link-embed-mistral embedding values
+job_embed = np.load("model/job_link_embed_mistral.npy")
+task_embed = np.load("model/task_link_mistral.npy")
+print("Embedding Values = "+str(job_embed))
+Embedding Values = [[-7.54782564e-01 -2.98963609e-01  2.43326883e-01 ...  1.20657959e-02
+  -6.70321993e-04 -1.94393378e-02]
+ [-6.90601115e-01 -1.75852898e-01  2.48057399e-01 ...  3.49376618e-02
+  -2.09625971e-02 -4.54189603e-02]
+ [-7.48547502e-01 -3.08059193e-01  1.34044105e-01 ...  8.47869339e-03
+  -7.67119878e-03 -2.18023544e-02]
+ ...
+ [-6.43798431e-01 -3.06138571e-01  2.61722211e-01 ...  2.86557165e-02
+  -2.86557165e-03 -2.19693827e-02]
+ [-7.19420036e-01 -2.70652780e-01  1.48815516e-01 ... -2.61079852e-03
+   1.16035490e-03 -4.93150831e-03]
+ [-4.87446138e-01 -3.84107557e-01  2.84668545e-01 ... -1.36484919e-02
+   5.84935366e-02 -2.72969837e-02]]
+#calculating NMI scores of both job and task description data
+onet_data['O*NET-SOC Code'] = onet_data['O*NET-SOC Code'].astype('category')#converting job soc code to numeric values
+onet_data['O*NET-SOC Code'] = onet_data['O*NET-SOC Code'].cat.codes
+patent_data['O*NET-SOC Code'] = patent_data['O*NET-SOC Code'].astype('category')
+patent_data['O*NET-SOC Code'] = patent_data['O*NET-SOC Code'].cat.codes
+job_codes = onet_data.values
+job_codes = job_codes[:,0:1].astype('int')
+job_nmi_score = kmeanCluster(job_codes, job_embed, 1)#clustering job data
+job_codes = patent_data.values
+job_codes = job_codes[:,0:1].astype('int')
+task_nmi_score = kmeanCluster(job_codes, task_embed, 0.7)#clustering task data
+print("Link Emded Mistral Job Description NMI  = "+str(job_nmi_score))
+print("Link Emded Mistral Task Description NMI = "+str(task_nmi_score))
+Link Emded Mistral Job Description NMI  = 0.6908589027761425
+Link Emded Mistral Task Description NMI = 0.5937274328607888
+#function to identify top 20 job task demand
+task_names = patent_data['Task'].ravel() 
+top_20_job_task = {}
+for i in range(len(task_embed)):#looping all task embedding
+    query = task_embed[i]
+    for j in range(0, 100):
+        if i != j:
+            value = task_embed[j]
+            similarity = cosine(query, value)#calculating cosine similarity between cureent and other job task
+            if similarity > 0:
+                if task_names[i] in top_20_job_task:
+                    top_20_job_task[task_names[i]] += 1
+                else:
+                    top_20_job_task[task_names[i]] = 1
+sorted_task = sorted(top_20_job_task.items(), key=lambda item: item[1], reverse=True)
+sorted_task = sorted_task[0:20]
+sorted_task = pd.DataFrame(sorted_task, columns=['Task', 'Demand'])
+print("Top 20 Highest Job Task Demand")
+sorted_task                    
+Top 20 Highest Job Task Demand
+#analysing top 20 lowest job task demand
+lowest_task = sorted(top_20_job_task.items(), key=lambda item: item[1], reverse=False)
+lowest_task = lowest_task[0:20]
+lowest_task = pd.DataFrame(lowest_task, columns=['Task', 'Demand'])
+print("Top 20 Lowest Job Task Demand")
+lowest_task
+Top 20 Lowest Job Task Demand
+#visualizing top 20 job task demand
+plt.figure(figsize=(8, 3))
+sns.lineplot(x=sorted_task['Task'], y=sorted_task['Demand'])
+plt.title("Top 10 Job Tasks with the Highest Demand")
+plt.xlabel("Task Description")
+plt.ylabel("Demand")
+plt.xticks(rotation=90)
+plt.show()
+
+#analysing top 20 job titles in demand
+dataset = pd.read_csv("Dataset/dataset.csv")
+job_name = dataset['Title']
+top_20_jobs = {}
+for i in range(len(task_embed)):
+    query = task_embed[i]
+    for j in range(0, 100):
+        if i != j:
+            value = task_embed[j]
+            similarity = cosine(query, value)
+            if similarity > 0:
+                if job_name[i] in top_20_jobs:
+                    top_20_jobs[job_name[i]] += 1
+                else:
+                    top_20_jobs[job_name[i]] = 1
+sorted_job = sorted(top_20_jobs.items(), key=lambda item: item[1], reverse=True)
+sorted_job = sorted_job[0:20]
+sorted_job = pd.DataFrame(sorted_job, columns=['Job', 'Demand'])
+print("Top 20 Highest Job Demand")
+sorted_job   
+Top 20 Highest Job Demand
+#identifying top 20 lowest demands
+lowest_job = sorted(top_20_jobs.items(), key=lambda item: item[1], reverse=False)
+lowest_job = lowest_job[0:20]
+lowest_job = pd.DataFrame(lowest_job, columns=['Job', 'Demand'])
+print("Top 20 Lowest Jobs Demand")
+lowest_job
+Top 20 Lowest Jobs Demand
+#visuaizing top 20 jobs in demands
+plt.figure(figsize=(8, 3))
+sns.lineplot(x=sorted_job['Job'], y=sorted_job['Demand'])
+plt.title("Top 20 Jobs with the Highest Demand")
+plt.xlabel("Job Title")
+plt.ylabel("Demand")
+plt.xticks(rotation=90)
+plt.show()
+#extension manhattan function to calculate similarity efficiently
+def manhattan_similarity(vec1, vec2):
+    return sum(abs(v1 - v2) for v1, v2 in zip(vec1, vec2))
+#compare computation performnace of propose Cosine and Manhattan distnace
+start = timeit.default_timer()
+cosine_score = cosine(task_embed[0], task_embed[1])#executing cosine
+end = timeit.default_timer()
+cosine_time = end - start #calculating cosine computation overhead 
+start = timeit.default_timer()
+manhattan_score = manhattan_similarity(task_embed[0], task_embed[1])#executing jaccard
+end = timeit.default_timer()
+manhattan_time = end - start #calculating extension manhattan computation overhead 
+#visualizing propose and extension computation graph
+plt.figure(figsize = (5, 3)) 
+sns.barplot(x=['Cosine', 'Manhattan'], y=[cosine_time, manhattan_time])
+plt.title("Propose Cosine & Extension Manhattan Execution Overhead Time")
+plt.ylabel("Computation Time")
+plt.xlabel("Algorithm Names")
+plt.show()
+
+#loading test task description and predict suitable job for that task description using cosine similarity 
+testData = pd.read_csv("Dataset/testData.csv")
+task = testData['task']
+index = testData['index']
+output = []
+for i in range(len(index)):#loop all test description index
+    similarity_score = 1000000
+    match_job = ""
+    for j in range(len(task_embed)):#loop all job task description 
+        if j != index[i]:
+            similarity = manhattan_similarity(task_embed[j], task_embed[index[i]])#use extension similarity to find similarity
+            if similarity < similarity_score:#take job with highest similarity
+                similarity_score = similarity
+                match_job = job_name[j]
+    output.append([task[i], match_job, similarity_score])#print predicted job along with task details and cosine similarity
+output = pd.DataFrame(output, columns=['Task Description', 'Suitable Job', 'Cosine Similarity Score'])
+output
+ 
+
+ 
+12. TESTING
+
+12.1 INTRODUCTION
+Software engineers draw a distinction between software fault and software failure. A fault will mean an error that is either a bug in programming or a defect in a certain program’s semantic. A fault may or may not result in a failure. A failure on the other hand is such that a software has not performed as expected by the end user. Under certain conditions such as when the faulty code is run on the CPU, or even when it is migrated to another hardware machine or when it is enhanced with new capabilities, faults become failures.
+Testing a software application is always essential in the process of analyzing the software with the aim of validating its quality and providing the stakeholders with relevant information. It states the errors that it contains and so guarantees that a software has a certain amount of standards that it fulfills with users and system requirements.
+12.1.1 System Testing and Implementation
+System testing is concerned with testing the logic of individual module codes and debugging them before their assembly into larger subsystems. This involves:
+1.	Module Integration Testing: This tests the linkages of modules to one another.
+2.	System Testing: This is done to check that the whole system conforms to the requirements provided.
+3.	Acceptance Testing: This goal is to represent the abilities of the system to the customers.
+There are two methods that could be used in selecting test cases which include:
+• Black Box Testing - Testing of the external behavior with respect to the system requirements specification.
+• White Box Testing - Concentrates on the assessment of internal logic and aims at coverage of the code.
+
+12.1.2 Testing Techniques
+Testing discovers mistakes made in the software by executing the software under conditions that were planned in advance. Two main approaches are:
+1.	Black Box Testing:
+Emphasizes functional specification and assesses external behavior without any interference on internal logic. It detects errors such as interface error, the database access error, performance as well.
+2.	White Box Testing:
+Deals with the internal logic by scrutinizing module flow graphs and analyzing logical paths, loops and data structures to be tested
+12.1.3 Testing Strategies
+To ensure their applications are free from errors and comply with the required functionality, the effective performance of software testing is paramount. Given below are the top primary kinds of software testing strategies used in the software development process:
+Unit Testing
+Unit testing tends to assure the correctness of the implementation of individual units or components of the software. It is usually conducted to ensure the correctness of internal logic, and that for a particular input element expected output is given. The unit testing is said to be structural and invasive since it depends on the knowledge of the structure of the software developed.
+The main objective of developers when using unit testing is to ensure the validity of each decision branch and each internal code path. This guarantees all business logic and configurations function as intended. Unit testing is usually done at the level of components and it helps in detecting faults very early in the development cycle.
+A good example would be a system with three modules: a Reputation Module, Route Discovery Module and Audit Module. All of these systems would be put through a separate test. Errors are recognized during this stage, patches are made and the patched executable units are checked before they are incorporated.
+
+Integration Testing
+Integration testing is usually done after unit testing and it is concerned with putting several units or components together into one cohesive system as they were meant to work. It is event driven, concentrating on functional interconnections and ultimately the interaction of the components of the system.
+While unit testing touches on the performance of each individual component, unit testing is aimed at confirming that all the component systems do not create problems when put together. These tests determine whether there are discrepancies in attached data and also the communication lines between modules so as to enhance unity and harmony in system execution.
+System Testing
+As the name states, system testing tests the final, integrated software product to ensure everything is functioning according to the requirements. It deals with the global layout and just like the end to end testing, guarantees normal results given the particular components are used in a realistic way.
+One example of system testing is configuration-oriented system integration testing, which checks how processes interact at various integration points. System testing focuses on process flows and assesses whether the system is reliable and meets the required expectations.
+Functional Testing
+Functional testing establishes whether the system implemented meets the business and technical requirements stated in system documents and users' manuals. It offers a systematic approach for verifying that all required functions have been implemented correctly and as expected by users.
+Functional testing was done by using each business process or feature and user interaction against documented requirements. This helps ensure that all features work as they are intended to work without any problems.
+ 
+13. SCREENSHOTS
+ 
+Screen 1 Importing required python classes and packages
+
+ 
+Screen 2 Calculate Cosine Similarity
+
+
+ 
+Screen 3 Loading and displaying patent task description dataset
+
+
+ 
+Screen 4 Displaying LINQ-MISTRAL embedding values  
+
+ 
+Screen 5 Calculate JOB and TASK description NMI score
+
+ 
+Screen 6 Estimate top 20 job tasks using cosine similarity  
+ 
+ 
+ 
+Screen 7 Task Description  
+
+ 
+Screen 8 Listing top 20 lowest demand job task description
+ 
+Screen 9 Visualizing top 20 job task description graph
+
+
+ 
+Screen 10 Job Name or Title
+
+ 
+Screen 11 Displaying lowest top 20 jobs title demands
+  
+ 
+Screen 12 Visualizing top 20 jobs in demand
+
+ 
+Screen 13 Performance graph
+ 
+Screen 14 Task description
+ 
+ 
+Screen 15 User Login
+
+ 
+Screen 16 Task Description
+ 
+14. CONCLUSION
+This study presented an effective approach for estimating job demand by integrating occupational data with advanced text embedding and similarity analysis techniques. By leveraging the ONET and occupational codes dataset, the system successfully captured detailed job and task-level information in a structured manner. The use of LINQ-MISTRAL embeddings enabled meaningful semantic representation of job tasks, while K-Means clustering and NMI scores validated the quality of the embedding space. Cosine similarity and Manhattan distance were employed to assess task relevance and demand, allowing a comparative evaluation of similarity measures. The methodology effectively identified both high-demand and low-demand job tasks and aggregated them to estimate overall job demand trends. Additionally, the system demonstrated practical applicability through prediction of suitable jobs for unseen task descriptions. Overall, the proposed framework provides a scalable and interpretable solution for analyzing workforce demand, supporting informed decision-making for workforce planning, skill development, and career guidance in technology-driven labour markets.
+
+FUTURE SCOPE
+Future work can extend this study by incorporating real-time labour market data such as job postings and employment statistics to enhance demand estimation accuracy. More advanced embedding models and domain-adaptive language models can be explored to better capture evolving job terminology. The framework can be expanded to support multilingual occupational data, enabling global labour market analysis. Additionally, integrating temporal deep learning models may improve trend forecasting capabilities. Further evaluation using diverse industry datasets and automated feedback mechanisms can strengthen robustness and practical deployment for policy planning and career recommendation systems.
+
+ 
+15. BIBLIOGRAPHY
+[1] G. Culot, G. Orzes, M. Sartor, and G. Nassimbeni, ‘‘The future of manufacturing: A Delphi-based scenario analysis on Industry 4.0,’’ Technological Forecasting Social Change, vol. 157, Aug. 2020, Art. no. 120092. 
+[2] A. Di Battista, S. Grayling, E. Hasselaar, T. Leopold, R. Li, M. Rayner, and S. Zahidi. (2023). Future of Jobs Report 2023. World Economic Forum, Geneva, Switzerland. [Online]. Available: https://www.weforum.org/reports/the-future-of-jobs-report-2023 
+[3] N. Dawson, M.-A. Rizoiu, B. Johnston, and M.-A. Williams, ‘‘Adaptively selecting occupations to detect skill shortages from online job ads,’’ in Proc. IEEE Int. Conf. Big Data (Big Data), Los Angeles, CA, USA, Dec. 2019, pp. 1637–1643. 
+[4] D. Acemoglu, D. Autor, J. Hazell, and P. Restrepo, ‘‘Artificial intelligence and jobs: Evidence from online vacancies,’’ J. Labour Econ., vol. 40, no. 1, pp. 293–340, Apr. 2022. [5] M. Webb, ‘‘The impact of artificial intelligence on the labour market,’’ SSRN, Preprint, Tech. Rep., 2019, doi: 10.2139/ssrn.3482150. 
+[6] T.Ha,M.Lee,B.Yun,andB.-Y.Coh,‘‘Jobforecasting based on the patent information: A word embedding-based approach,’’ IEEE Access, vol. 10, pp. 7223–7233, 2022. 
+[7] F. M.Fossen, D. Samaan, and A. Sorgner, ‘‘How are patented AI, software and robot technologies related to wage changes in the United States?’’ Frontiers Artif. Intell., vol. 5, Jun. 2022, Art. no. 869282. 
+[8] S. Xu, J. Stienmetz, and M. Ashton, ‘‘How will service robots redefine leadership in hotel management? A Delphi approach,’’ Int. J. Contemp. Hospitality Manage., vol. 32, no. 6, pp. 2217–2237, Apr. 2020.
+[9] P.-L. Yeoh, ‘‘A critical assessment of skills and knowledge for entry-level marketing jobs: A Delphi study,’’ Marketing Educ. Rev., vol. 29, no. 4, pp. 242–265, Oct. 2019. 
+[10] V. Tiberius and S. Hirth, ‘‘Impacts of digitization on auditing: A Delphi study for Germany,’’ J. Int. Accounting, Auditing Taxation, vol. 37, Dec. 2019, Art. no. 100288. 
+[11] R. Gruetzemacher, F. E. Dorner, N. Bernaola-Alvarez, C. Giattino, and D. Manheim, ‘‘Forecasting AI progress: A research agenda,’’ Technol. Forecasting Social Change, vol. 170, Sep. 2021, Art. no. 120909. 
+[12] F. M. Fossen and A. Sorgner, ‘‘New digital technologies and heteroge neous wage and employment dynamics in the United States: Evidence from individual-level data,’’ Technol. Forecasting Social Change, vol. 175, Feb. 2022, Art. no. 121381. 
+[13] A. Akaev, T. Devezas, Y. Ichkitidze, and A. Sarygulov, ‘‘Forecasting the labour intensity and labour income share for G7 countries in the digital age,’’ Technol. Forecasting Social Change, vol. 167, Jun. 2021, Art. no. 120675. 
+[14] I. Kashirina, Y. Bondarenko, and T. Azarnova, ‘‘Analysis and forecasting of the market of educational services of the region,’’ in Proc. 1st Int. Conf. Technol. Enhanced Learn. Higher Educ. (TELE), Lipetsk, Russia, Jun. 2021, pp. 30–34. 
+[15] S. Das, S. Steffen, W. Clarke, P. Reddy, E. Brynjolfsson, and M. Fleming, ‘‘Learning occupational task-shares dynamics for the future of work,’’ in Proc. AAAI/ACM Conf. AI, Ethics, Soc., New York, NY, USA, Feb. 2020, pp. 36–42. 
+[16] D. Percia David, S. Anton Moreno, L. Maréchal, T. Maillart, and A. Mermoud, ‘‘Forecasting labour needs for digitalization: A bi-partite graph machine learning approach,’’ World Pat. Inf., vol. 73, Jun. 2023, Art. no. 102193. 
+[17] H. Bakhshi, J. M. Downing, M. A. Osborne, and P. Schneider, The Future of Skills: Employment in 2030. London, U.K.: Pearson, 2017. 
+[18] R.Gruetzemacher, D. Paradice, and K. B. Lee, ‘‘Forecasting extreme labour displacement: A survey of AI practitioners,’’ Technological Forecasting Social Change, vol. 161, Dec. 2020, Art. no. 120323. 
+[19] S. Altuntas, T. Dereli, and A. Kusiak, ‘‘Forecasting technology success based on patent data,’’ Technological Forecasting Social Change, vol. 96, pp. 202–214, Jul. 2015. 
+[20] H. P. Cho, H. Lim, D. Lee, H. Cho, and K.-I. Kang, ‘‘Patent anal ysis for forecasting promising technology in high-rise building con struction,’’ Technol. Forecasting Social Change, vol. 128, pp. 144–153, Mar. 2018.

@@ -1,0 +1,30 @@
+10. SYSTEM ARCHITECTURE & DATASET
+
+10.1 Dataset Description: NSL-KDD and CICIDS-2017
+The predictive capability of the CyberShield AI is anchored in high-quality, standardized network telemetry datasets. In this research, we primarily utilize the NSL-KDD dataset, which is an improved version of the original KDD'99 dataset. It addresses critical issues such as redundant records that previously led to biased model evaluation. Each record in the NSL-KDD dataset consists of 41 features, including:
+- Basic Features: such as protocol type, service, and flag.
+- Content Features: such as num_failed_logins and root_shell access.
+- Time-based Traffic Features: such as count and serror_rate.
+- Host-based Traffic Features: analyzing connection density over specific IP windows.
+
+Additionally, we reference the CICIDS-2017 dataset to validate the model's performance against contemporary threats like Heartbleed and Botnet attacks, which were not present in legacy datasets. This multi-dataset approach ensures the ensemble model generalizes well across both historical and modern attack manifestations.
+
+<div align="center">
+  <img src="../system_architecture_diagram_1776604032488.png" alt="High Level System Architecture" />
+  <p><i>Figure 10.1: Multi-stage pipeline architecture demonstrating the complete ingestion, processing, and prediction framework executed within the CyberShield application environment.</i></p>
+</div>
+
+10.2 High-Level System Architecture Diagram
+The CyberShield architecture is designed as a modular, asynchronous pipeline divided into four primary layers:
+
+1. Data Ingestion Layer:
+This layer handles the acquisition of raw network traffic. Whether through live packet capture via Pyshark or batch CSV ingestion, the system ensures data integrity and schema alignment. Raw features are mapped into a standardized tensor format for downstream processing.
+
+2. Feature Engineering & Selection Layer:
+In this phase, the raw telemetry undergoes rigorous mathematical transformation. Categorical variables are encoded using Label Encoding or One-Hot Encoding, while numerical variables are scaled using MinMaxScaler. Feature selection algorithms like Mutual Information and Correlation Matrices are applied to reduce dimensionality and eliminate noise.
+
+3. Prediction (Ensemble) Layer:
+The core decision engine of the system. It consists of a "Stacked Generalization" architecture. Base models (Random Forest, Decision Trees, and AdaBoost) generate independent predictions, which are then fed into a Meta-Classifier (Logistic Regression). This layering ensures that the system captures complex, non-linear relationships that a single model might miss.
+
+4. Explanation & Presentation Layer:
+Post-prediction, the system utilizes SHAP (SHapley Additive exPlanations) to provide local interpretability for every threat detected. These insights, along with real-time classification metrics, are served through a Flask/Streamlit dashboard, allowing SOC analysts to view live threat heatmaps and receive automated mitigation suggestions.

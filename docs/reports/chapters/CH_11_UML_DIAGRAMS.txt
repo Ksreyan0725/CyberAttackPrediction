@@ -1,0 +1,31 @@
+11. UML DIAGRAMS
+
+Unified Modeling Language (UML) provides a standardized visual representation of the CyberShield system's architecture, logical structure, and behavioral dynamics. These diagrams ensure that the complex relationship between data ingestion, machine learning inference, and user notification is clearly documented for both developers and security analysts.
+
+11.1 Use Case Diagram (Analyst vs Admin)
+The Use Case diagram identifies the primary actors and their interactions with the CyberShield system. 
+- Security Analyst: Primarily interacts with the Dashboard. Their use cases include "Monitor Real-time Alerts," "Review SHAP Explanations," and "Accept Mitigation Suggestions."
+- System Administrator: Responsible for the operational integrity of the ML pipeline. Their use cases include "Trigger Model Retraining," "Modify Scaling Thresholds," and "Manage Data Ingestion Sources."
+The system itself serves as an automated actor that performs "Packet Interception" and "Anomaly Classification" autonomously.
+
+11.2 Class Diagram (Model, Data, Visualizer)
+The class diagram outlines the static structure of the Python-based backend. Key classes include:
+- PacketIngestor: Responsible for handling RAW PCAP or CSV data.
+- FeatureTransformer: Contains methods for MinMaxScaling and LabelEncoding.
+- StackingClassifier: The core ensemble class that encapsulates base models (RF, XGB) and the meta-classifier.
+- ExplainerEngine: Wraps the SHAP library to generate interpretability vectors.
+- DashboardApp: A Streamlit-based UI class that manages the visual state of the application.
+
+11.3 Sequence Diagram (Packet Flow to Prediction)
+The Sequence diagram illustrates the temporal flow of a single connection record through the system:
+1. The Network Interface captures a packet.
+2. The PacketIngestor extracts raw features and passes them to the FeatureTransformer.
+3. The StackingClassifier receives the transformed vector and runs parallel inference across the ensemble.
+4. If a 'Malicious' label is predicted, the ExplainerEngine is invoked.
+5. Finally, the DashboardApp updates the UI state and logs the incident to the Forensic Database.
+
+11.4 Collaboration Diagram
+The Collaboration diagram focuses on the object interactions required to maintain high throughput. It highlights how the DetectionEngine and the Visualizer communicate via an asynchronous message queue, ensuring that dashboard rendering does not block the real-time packet interception process.
+
+11.5 Activity Diagram: Anomaly Detection Flow
+The Activity diagram represents the operational logic of the detection loop. It starts with data waiting in the buffer. The process branches based on whether the data is a single packet or a batch. The logic moves through 'Cleaning', 'Scaling', and 'Inference'. If an anomaly is found, a sub-process for 'Mitigation Generation' is triggered; otherwise, the system loops back to the next ingestion cycle.

@@ -20,9 +20,8 @@ CyberAttackPrediction/model/*.hdf5
 !backups/**/*.7z
 !backups/**/*.md
 
-# Allow Software folder
-!backups/**/Software/
-!Software/
+# Ignore Software folder
+Software/
 
 # OS Files
 .DS_Store
@@ -51,8 +50,6 @@ backups/**/__pycache__/
 !backups/**/*.zip
 !backups/**/*.7z
 !backups/**/*.md
-!backups/**/Software/**
-!Software/**
 
 # Unzip Folders
 *unzip*/
@@ -68,18 +65,7 @@ saved_creds.json
 CyberAttackPrediction/saved_creds.json
 users.json
 CyberAttackPrediction/users.json
-
-# add new documenattion
-documentation_docs/
-
+ 
 *.log
 launcher_debug.log
 *.pyc
-Project materials/
-
-# add new folder to git ignore for tactical_sandbox 
-tactical_sandbox/
-
-# add new bat file 
-start_launcher.bat
-test_sandbox.bat

@@ -1,0 +1,197 @@
+9. SYSTEM DESIGN (METHODOLOGY)
+
+System Design encapsulates the methodological workflow that transitions the theoretical goals of the project into an operational pipeline. This methodology establishes the sequence of data processing, normalization, evaluation via ensemble models, and result interpretation. The architecture follows eighteen specific steps to ensure mathematical integrity and high predictive performance.
+
+9.1 CORE EIGHTEEN-STEP METHODOLOGY
+
+Step 1: Threat Definition and Objective Setting
+The foundational phase involves defining the specific threat paradigms the architecture intends to mitigate. These include Denial of Service (DoS), Probing, Remote-to-Local (R2L), and User-to-Root (U2R) attacks. We establish metrics such as high Recall and F1-Score to ensure critical infrastructure remains protected without disrupting legitimate operations.
+
+Pseudo-code: Step 1 Logic
+```python
+Define Threat_Taxonomy = ["DoS", "Probe", "R2L", "U2R"]
+Define Objective_Metrics = {"Recall": > 0.95, "F1": > 0.90}
+Initialize Risk_Parameters(Thresholds=0.85)
+```
+
+Step 2: Network Traffic Dataset Acquisition
+The system utilizes the NSL-KDD and CICIDS-2017 benchmark datasets as its ground-truth foundations. These datasets provide millions of connection records representing both normal behavior and various attack signatures. We use the filtered 'KDDTrain+.txt' files to eliminate redundancy and ensure an objective learning phase.
+
+Pseudo-code: Step 2 Logic
+```python
+Import Dataset(Path="NSL_KDD/KDDTrain.csv")
+Verify Data_Integrity(expected_columns=42)
+Load Historical_Traffic_Frames()
+```
+
+Step 3: Cyber Threat Intelligence Data Gathering
+The system implements data gathering paradigms to incorporate external threat intelligence. This involves integrating patterns from the MITRE ATT&CK framework and STIX/TAXII feeds. By combining historical benchmarks with real-time threat data, the system stays resilient against emerging zero-day exploits.
+
+Pseudo-code: Step 3 Logic
+```python
+Intelligence_Feeds = Pull_External_Threat_Intelligence()
+Map_Patterns(Attack_Type=Target_Vector, Source=External_Feeds)
+Append_Contextual_Metadata(Intelligence_Feeds)
+```
+
+Step 4: Data Cleaning and Label Integrity Validation
+Raw datasets often contain missing or malformed values (Null/NaN) that can hinder performance. The cleaning phase involves discarding corrupt records or applying mean-imputation to missing numerical values. We also verify label integrity, ensuring that specific attack signatures (e.g., 'teardrop') are correctly categorized into their respective attack classes.
+
+Pseudo-code: Step 4 Logic
+```python
+For Record in Dataset:
+    If Record.contains(NaN):
+        Impute_Value(Record, method="Mean")
+    If Record.Label not in Threat_Taxonomy:
+        Re_Tag_Label(Record, logic="Metadata_Map")
+```
+
+Step 5: Network Feature Preprocessing
+Once cleaned, features must be transformed for optimal processing by machine learning algorithms. We apply StandardScaler or MinMaxScaler to normalize features like packet byte sizes and connection durations. This prevents high-magnitude features from disproportionately influencing the model's distance-based calculations.
+
+Pseudo-code: Step 5 Logic
+```python
+Scaler = MinMaxScaler(feature_range=(0,1))
+Normalized_Data = Scaler.fit_transform(Clean_Data)
+Save_Scaler_Parameters(Path="models/scaler.pkl")
+```
+
+Step 6: Traffic Embedding & Vectorization Preparation
+Categorical features (e.g., protocol types: TCP, UDP, ICMP) are transformed into numerical vectors. We use One-Hot Encoding for small categorical sets and LabelEncoding for larger sets (e.g., specific network services like HTTP or FTP). This ensures the dataset is in a format compatible with tensor operations.
+
+Pseudo-code: Step 6 Logic
+```python
+For Feature in Categorical_List:
+    If Feature.length < 3:
+        Apply_One_Hot_Encoding(Feature)
+    Else:
+        Apply_Label_Encoding(Feature)
+```
+
+Step 7: Embedding Quality & Variance Evaluation
+Following encoding, the system evaluates the variance of each feature. Features with zero or near-zero variance over thousands of records provide no discriminative information and are flagged for removal to optimize the model's computational efficiency.
+
+Pseudo-code: Step 7 Logic
+```python
+Variance_Vector = Calculate_Variance(Encoded_Data)
+Zero_Variance_List = Find_Minimums(Variance_Vector, threshold=0.0)
+Flag_For_Removal(Zero_Variance_List)
+```
+
+Step 8: Correlation Computation & Feature Selection
+To reduce latency and avoid over-fitting, we utilize Pearson Correlation matrices to identify redundant features. Features with high pairwise correlation (e.g., 'num_compromised' and 'num_root') are pruned. This reduces the multi-collinearity of the input vector, allowing the ensemble model to converge faster.
+
+Pseudo-code: Step 8 Logic
+```python
+Correlation_Matrix = cleaned_df.corr()
+Upper_Triangle = Correlation_Matrix.where(np.triu(np.ones(Correlation_Matrix.shape), k=1).astype(bool))
+To_Drop = [column for column in Upper_Triangle.columns if any(Upper_Triangle[column] > 0.95)]
+Drop_Redundant_Features(To_Drop)
+```
+
+Step 9: Temporal Frequency Analysis of Attack Vectors
+The system analyzes packet arrival distributions to identify anomalous patterns like "Beaconing" or rhythmic "Pulse" behaviors. These patterns often indicate Command-and-Control (C2) communication or automated scanning activities that might otherwise bypass static threshold filters.
+
+Pseudo-code: Step 9 Logic
+```python
+Calculate Inter_Arrival_Time(Packet_Stream)
+Frequency_Spectrum = Apply_FFT(Inter_Arrival_Time)
+Confirm_Pulse_Detection(Frequency_Spectrum, Threshold=Alpha)
+```
+
+Step 10: Attack Probability Estimation Logic
+This represents the core predictive engine. The system utilizes a Stacking Ensemble where Base-Learners (Random Forest, Decision Trees, KNN) generate initial predictions. These are then processed by a Meta-Learner (Logistic Regression) which weighs each algorithm's confidence to produce the final classification.
+
+Pseudo-code: Step 10 Logic
+```python
+Model_Predictions = [rf.predict_proba(X), svm.predict_proba(X), knn.predict_proba(X)]
+Final_Probability = Meta_Learner.predict(Model_Predictions)
+Output_Threat_Class(Final_Probability)
+```
+
+Step 11: Threat Severity & Risk Ranking
+Following classification, the system assigns a threat severity level. A high-probability DoS or U2R detection triggers a "Critical" rank, while reconnaissance probes on non-essential ports may be ranked as "Low." This prioritization assists analysts in focusing on the most damaging exploits.
+
+Pseudo-code: Step 11 Logic
+```python
+Severity_Matrix = {"DoS": 10, "Probe": 3, "R2L": 7, "U2R": 9}
+Risk_Score = Final_Probability * Severity_Matrix[Predicted_Class]
+Assign_Priority_Level(Risk_Score)
+```
+
+Step 12: Network Segment Risk Aggregation
+The system aggregates risk scores across specific network subnets and time windows. Coordinated attacks targeting multiple hosts in a single segment (e.g., the "Finance" subnet) trigger an elevated risk alert, identifying reconnaissance phases that individual packet checks might miss.
+
+Pseudo-code: Step 12 Logic
+```python
+Segment_Score = Sum(Risk_Scores in Subnet) / Connection_Density
+If Segment_Score > Global_Threshold:
+    Trigger_Segmental_Alert(Subnet_ID)
+```
+
+Step 13: Global Alert Severity Ranking
+The Global Manager ranks active alerts across the entire enterprise. Attacks affecting critical internal infrastructure (e.g., Domain Controllers) are prioritized over guest network anomalies, ensuring that limited security resources are applied where they are most needed.
+
+Pseudo-code: Step 13 Logic
+```python
+Global_Alert_Queue = Sort_By_Severity(All_Active_Alerts)
+Apply_Business_Importance_Weights(Global_Alert_Queue)
+Dispatch_Emergency_Notifications(Top_K_Alerts)
+```
+
+Step 14: Validation using Confusion Matrix & ROC-AUC
+The performance of the model is validated using quantitative metrics. We calculate F1-Scores, False Positive Rates (FPR), and the Area Under the Receiver Operating Characteristic curve (ROC-AUC). These metrics ensure the model is reliable and minimizes the impact of "Alert Fatigue."
+
+Pseudo-code: Step 14 Logic
+```python
+Matrix = Calculate_Confusion_Matrix(Actual, Predicted)
+AUC_Score = Calculate_ROC_AUC(Actual, Probabilities)
+Log_Evaluation_Metrics(Matrix, AUC_Score)
+```
+
+Step 15: SHAP Visualization and Decision Interpretation
+To ensure interpretability, the system calculates SHAP values to explain the top 5 features driving a specific prediction. This provides clinical evidence to the security team, such as identifying that a packet was flagged due to an abnormal "service error rate" or "destination host count."
+
+Pseudo-code: Step 15 Logic
+```python
+Explainer = shap.KernelExplainer(Model.predict, X_sample)
+Shap_Values = Explainer.shap_values(Target_Packet)
+Plot_Feature_Contribution(Shap_Values, File="logs/explanation.png")
+```
+
+Step 16: Interactive Prediction Dashboard Implementation
+The results are pushed to a real-time monitoring dashboard built with Flask. The interface updates as the inference engine processes traffic batches, providing visual cues like pie charts for threat distribution and color-coded alerts for active incidents.
+
+Pseudo-code: Step 16 Logic
+```python
+While True:
+    Inference_Result = Run_Engine_Inference(Batch)
+    Update_Dashboard_State(Inference_Result)
+    Wait(Realtime_Latency_Interval)
+```
+
+Step 17: Result Documentation and Incident Storage
+Every predictive inference is logged in a structured format (JSON or SQLite). This creates a forensic audit trail for both academic review and actual security investigations, allowing for long-term trend analysis of network behavior.
+
+Pseudo-code: Step 17 Logic
+```python
+Incident_Object = Create_JSON_Summary(Packet_ID, Prediction, Severity, Explanation)
+Write_To_Database(Incident_Object, Table="incident_logs")
+```
+
+Step 18: Post-Deployment Review and Refinement
+The system maintains a feedback loop where analysts can flag false positives. Validated corrections are added to a retraining buffer, allowing the model to adapt to the specific traffic characteristics of its host environment and improve accuracy over time.
+
+Pseudo-code: Step 18 Logic
+```python
+Feedback = Get_Analyst_Correction(Packet_ID)
+If Feedback == "Incorrect":
+    Add_To_Retrain_Buffer(Packet_Data, Correct_Label)
+    If Buffer_Full:
+        Trigger_Model_FineTuning()
+```
+
+<div align="center">
+  <img src="../methodology_18step_map_1776604067729.png" alt="18-Step Methodology" />
+  <p><i>Figure 9.1: The complete 18-step sequential data preprocessing and evaluation methodology flow.</i></p>
+</div>

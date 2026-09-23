@@ -1,0 +1,12 @@
+7. FEASIBILITY STUDY
+
+The feasibility study establishes the project's viability by analyzing technical, operational, and economic constraints. It ensures that the proposed predictive framework can be effectively transitioned from a conceptual architecture into a robust, deployable solution within standard organizational environments.
+
+7.1 Technical Feasibility
+Technical feasibility evaluates whether the required technology exists and is accessible to build the CyberShield system. Modern open-source ecosystems, particularly the Python data science stack, have drastically lowered the barrier to entry for complex machine learning projects. Libraries such as Scikit-Learn and XGBoost allow for the implementation of high-performance ensemble models without the need for specialized supercomputing hardware. Furthermore, the use of Flask for the web-based command center ensures that the system can be deployed on standard server architectures or local workstations with minimal configuration overhead.
+
+7.2 Operational Feasibility
+Operational feasibility assesses how well the system fits into the workflow of a standard Security Operations Center (SOC). Traditional IDS systems often suffer from high false-positive rates, leading to analyst fatigue. CyberShield addresses this by focusing on behavioral analytics and providing Explainable AI (XAI) outputs. By translating complex mathematical predictions into human-readable feature importance graphs via SHAP, the system ensures that Tier-1 analysts can rapidly verify and act upon alerts, making it highly feasible for real-world integration.
+
+7.3 Economic and Time Feasibility
+The project leverages open-source datasets (NSL-KDD) and libraries, significantly reducing development costs. The use of a modular architecture allows for incremental development and testing, ensuring that key deliverables are met within the project timeline.

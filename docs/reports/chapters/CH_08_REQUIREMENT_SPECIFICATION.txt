@@ -1,0 +1,19 @@
+8. REQUIREMENT SPECIFICATION
+
+The requirement specification outlines the minimum hardware and software environments necessary to ensure the stable execution of the CyberShield predictive engine and its associated web interface.
+
+8.1 Hardware Requirements
+While the Python-based architecture is optimized for efficiency, the use of ensemble machine learning models requires moderate computational resources.
+- Central Processing Unit (CPU): Minimum Quad-core processor (Intel Core i5 or AMD Ryzen 5). High-frequency cores are prioritized to handle real-time feature extraction and inference latency.
+- Random Access Memory (RAM): Minimum 8 GB (16 GB Recommended). Large RAM capacity is essential for loading the training datasets into Pandas DataFrames and holding the serialized model artifacts in memory.
+- Storage: 20 GB of free space for datasets, environment dependencies, and serialized model files (SSD preferred for faster read/write operations).
+
+8.2 Software Requirements
+The software stack is built on modern, widely-supported frameworks to ensure cross-platform compatibility.
+- Operating System: Windows 10/11, macOS, or Linux (Ubuntu 22.04+ Recommended).
+- Programming Language: Python 3.10 to 3.13.
+- Back-end Framework: Flask 3.1.3 (Handles routing and RESTful API logic).
+- Machine Learning Libraries: Scikit-learn (Preprocessing and Ensemble models), XGBoost (Gradient boosting), and Joblib (Model serialization).
+- Explainability Framework: SHAP (SHapley Additive exPlanations) for interpretability.
+- Front-end: HTML5, Vanilla CSS, and JavaScript for the interactive dashboard.
+- Environment Management: Python Virtual Environment (venv) for dependency isolation.
