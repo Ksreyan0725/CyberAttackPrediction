@@ -178,7 +178,8 @@
     }
 
     .form-panel {
-        flex: 1;
+        /* Fluid flex basis for responsive design */
+        flex: 1 1 400px;
         padding: 1.75rem 2.25rem;
         display: flex;
         flex-direction: column;
@@ -359,6 +360,9 @@
                         <span class="input-group-text"><i class="fas fa-key"></i></span>
                         <input type="password" class="form-control" name="password" id="password" placeholder="••••••••"
                             required>
+                        <button class="btn btn-outline-secondary border-start-0" type="button" id="togglePassword" aria-label="Toggle password visibility">
+                            <i class="fas fa-eye-slash" id="eyeIcon"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -515,6 +519,20 @@
                 submitBtn.innerHTML = originalContent;
             }
         });
+
+        // Toggle Password Visibility
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+        
+        if (togglePasswordBtn && passwordInput) {
+            togglePasswordBtn.addEventListener('click', function () {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                eyeIcon.classList.toggle('fa-eye');
+                eyeIcon.classList.toggle('fa-eye-slash');
+            });
+        }
     });
 </script>
 {% endblock %}

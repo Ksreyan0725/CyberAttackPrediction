@@ -419,6 +419,33 @@ def UserLoginAction():
     else:
         return jsonify({"status": "error", "error_type": "invalid_password", "message": "Identification failed: Incorrect password key."}), 401
 
+@app.route('/GuestLogin', methods=['POST'])
+def GuestLogin():
+    try:
+        # Call the Rust engine securely
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        rust_exe = os.path.join(base_dir, "rust_auth", "target", "release", "rust_auth.exe")
+        
+        if not os.path.exists(rust_exe):
+            return jsonify({"status": "error", "message": "Rust auth engine not found."}), 500
+            
+        result = subprocess.run([rust_exe], capture_output=True, text=True)
+        if result.returncode != 0:
+            return jsonify({"status": "error", "message": "Rust engine failed to generate credentials."}), 500
+            
+        # Parse the secure JSON output from Rust
+        import json
+        guest_creds = json.loads(result.stdout)
+        
+        # We don't save this to users.json to keep it strictly temporary and memory-safe
+        # We just forcefully authenticate the session using the cryptographic anchor
+        session['user'] = guest_creds['username']
+        session['is_guest'] = True
+        
+        return jsonify({"status": "success", "message": f"Secure Temp Account generated: {guest_creds['username']}", "redirect": url_for('train_view')})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route('/ResetPasswordAction', methods=['POST'])
 def ResetPasswordAction():
     data = request.get_json()
@@ -570,7 +597,7 @@ def AdminResetPassword():
     
     return jsonify({"status": "error", "message": "User not found"}), 404
 
-@app.route('/Logout')
+@app.route('/Logout', methods=['POST'])
 def Logout():
     """Securely terminates the user session and clears all cached results."""
     # Preserve only the pulse state if applicable
@@ -773,7 +800,7 @@ def explorer():
         requested_abs = os.path.abspath(os.path.join(base_dir, doc_path))
         project_root = os.path.abspath(base_dir)
         
-        if not requested_abs.startswith(project_root):
+        if os.path.commonpath([project_root, requested_abs]) != project_root:
             return render_template('documentation.html', error="Security Alert: Outbound traversal blocked.", project_tree=project_tree)
         
         # Explicit check for sensitive files even within project
@@ -825,8 +852,8 @@ def explorer():
         if ext == '.docx':
             content = "[Binary Word Data]" # Placeholder for reading branch
         else:
-            with open(full_path, 'r', encoding='utf-8') as f:
-                content = f.read()
+            import pathlib
+            content = pathlib.Path(full_path).read_text(encoding='utf-8')
             
         display_path = doc_path.replace('\\', '/')
         if ext == '.md':
@@ -1107,4 +1134,4 @@ if __name__ == '__main__':
     #   1. Resets PULSE_DETECTED to False in the new process → fires a second browser window
     #   2. Causes WinError 10038 (invalid socket) on Python 3.13 / Windows
     # The launcher handles process management, so the reloader is not needed here.
-    app.run(debug=True, port=2026, use_reloader=False)
+    app.run(port=2026, use_reloader=False)

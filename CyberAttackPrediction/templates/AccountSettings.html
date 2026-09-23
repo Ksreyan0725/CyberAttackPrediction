@@ -542,7 +542,11 @@
             if (res.status === 403) {
                 body.innerHTML = '<tr><td class="text-center py-5 tracking-widest text-danger">ACCESS DENIED: CLEARANCE LEVEL LOWER THAN ADMIN</td></tr>';
             } else {
-                body.innerHTML = users.map((u, i) => `
+                const esc = (str) => String(str).replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag]));
+                body.innerHTML = users.map((u, i) => {
+                    const safeName = esc(u.username);
+                    const safeRole = esc(u.role);
+                    return `
                     <tr class="user-row animate-reveal" style="animation-delay: ${i*0.1}s">
                         <td>
                             <div class="d-flex align-items-center gap-3">
@@ -550,25 +554,25 @@
                                     <i class="fas fa-user-secret text-primary"></i>
                                 </div>
                                 <div>
-                                    <div class="dynamic-text fw-bold">${u.username}</div>
-                                    <div class="xx-small dynamic-muted text-uppercase tracking-wider">Access Level: ${u.role}</div>
+                                    <div class="dynamic-text fw-bold">${safeName}</div>
+                                    <div class="xx-small dynamic-muted text-uppercase tracking-wider">Access Level: ${safeRole}</div>
                                 </div>
                             </div>
                         </td>
                         <td class="text-end">
                             <div class="d-flex gap-2 justify-content-end">
-                                <button class="btn btn-sm btn-outline-info rounded-pill px-3 border-0 bg-glass" onclick="adminResetKey('${u.username}')">
+                                <button class="btn btn-sm btn-outline-info rounded-pill px-3 border-0 bg-glass" onclick="adminResetKey('${safeName}')">
                                     <i class="fas fa-key me-1"></i> Override Key
                                 </button>
                                 ${u.username !== 'admin' ? `
-                                    <button class="btn btn-sm btn-outline-danger rounded-pill px-3 border-0 bg-glass" onclick="adminTerminateUser('${u.username}')">
+                                    <button class="btn btn-sm btn-outline-danger rounded-pill px-3 border-0 bg-glass" onclick="adminTerminateUser('${safeName}')">
                                         <i class="fas fa-trash-alt me-1"></i> Terminate
                                     </button>
                                 ` : ''}
                             </div>
                         </td>
                     </tr>
-                `).join('');
+                `}).join('');
             }
             loader.style.display = 'none';
             wrap.style.display = 'block';

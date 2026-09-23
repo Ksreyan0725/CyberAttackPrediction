@@ -1342,12 +1342,11 @@
                 if (data.status === 'success') {
                     // Show success state
                     const saveBtn = document.querySelector('.btn-group-edit .btn-outline-success');
-                    const originalHTML = saveBtn.innerHTML;
                     saveBtn.innerHTML = '<i class="fas fa-check me-1"></i>Synchronized';
                     saveBtn.classList.replace('btn-outline-success', 'btn-success');
                     
                     setTimeout(() => {
-                        saveBtn.innerHTML = originalHTML;
+                        saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save Neural Map';
                         saveBtn.classList.replace('btn-success', 'btn-outline-success');
                         toggleEditMode(false);
                         refreshDocumentContent(); // Reload to see rendered changes
@@ -1392,26 +1391,29 @@
                 const data = await res.json();
                 
                 if (data.status === 'success') {
+                    const esc = (s) => String(s).replace(/[&<>'"]/g, t => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[t]||t));
                     let finalHTML = '';
                     if (data.stdout) {
-                        finalHTML += `<div class="exec-line exec-stdout">${data.stdout}</div>`;
+                        finalHTML += `<div class="exec-line exec-stdout">${esc(data.stdout)}</div>`;
                     }
                     if (data.stderr) {
-                        finalHTML += `<div class="exec-line exec-stderr">${data.stderr}</div>`;
+                        finalHTML += `<div class="exec-line exec-stderr">${esc(data.stderr)}</div>`;
                     }
                     
                     outputEl.innerHTML += finalHTML;
-                    outputEl.innerHTML += `<div class="exec-line text-success fw-bold">Process terminated with exit code: ${data.returncode}</div>`;
+                    outputEl.innerHTML += `<div class="exec-line text-success fw-bold">Process terminated with exit code: ${esc(data.returncode)}</div>`;
                     
                     statusEl.textContent = data.returncode === 0 ? 'SUCCESS' : 'FAILED';
                     statusEl.className = 'x-small fw-bold letter-spacing-1 ' + (data.returncode === 0 ? 'text-success' : 'text-danger');
                 } else {
-                    outputEl.innerHTML += `<div class="exec-line exec-stderr">System Failure: ${data.message}</div>`;
+                    const esc = (s) => String(s).replace(/[&<>'"]/g, t => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[t]||t));
+                    outputEl.innerHTML += `<div class="exec-line exec-stderr">System Failure: ${esc(data.message)}</div>`;
                     statusEl.textContent = 'ERROR';
                     statusEl.className = 'x-small fw-bold letter-spacing-1 text-danger';
                 }
             } catch (err) {
-                outputEl.innerHTML += `<div class="exec-line exec-stderr">Network/Neural Interruption: ${err.message}</div>`;
+                const esc = (s) => String(s).replace(/[&<>'"]/g, t => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[t]||t));
+                outputEl.innerHTML += `<div class="exec-line exec-stderr">Network/Neural Interruption: ${esc(err.message)}</div>`;
                 statusEl.textContent = 'OFFLINE';
                 statusEl.className = 'x-small fw-bold letter-spacing-1 text-danger';
             }

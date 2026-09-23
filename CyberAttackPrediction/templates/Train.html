@@ -490,7 +490,8 @@
             const colorClass = type === 'error' ? 'text-danger' : (type === 'success' ? 'text-success' : 'text-primary');
             const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             
-            entry.innerHTML = `<span class="${colorClass} fw-bold me-2" style="font-size: 0.75rem; opacity: 0.9;">[${timeString}]</span> <span class="message-content">${msg}</span>`;
+            const esc = (s) => String(s).replace(/[&<>'"]/g, t => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[t]));
+            entry.innerHTML = `<span class="${colorClass} fw-bold me-2" style="font-size: 0.75rem; opacity: 0.9;">[${timeString}]</span> <span class="message-content">${esc(msg)}</span>`;
             logWindow.appendChild(entry);
             
             // Smoother scroll to bottom behavior
