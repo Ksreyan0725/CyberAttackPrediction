@@ -14,4 +14,4 @@ COPY CyberAttackPrediction /app/CyberAttackPrediction
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "cd /app/CyberAttackPrediction && gunicorn --bind 0.0.0.0:${PORT:-8080} Main:app"]
+CMD ["sh", "-c", "cd /app/CyberAttackPrediction && gunicorn --workers 1 --threads 2 --bind 0.0.0.0:${PORT:-8080} Main:app"]
