@@ -213,13 +213,21 @@
         transform: translateX(-66.6666%);
     }
 
-    /* Hosted (Render) mode: single Default slide, no toggle bar */
-    .mode-slider.single-mode {
-        width: 100%;
+    /* Hosted (Render) mode: 2-button toggle, upload hidden */
+    .dataset-toggle-container.two .toggle-indicator {
+        width: calc(50% - 4px);
     }
 
-    .mode-slider.single-mode .mode-slide {
-        width: 100%;
+    .mode-slider.two-mode {
+        width: 200%;
+    }
+
+    .mode-slider.two-mode .mode-slide {
+        width: 50%;
+    }
+
+    .mode-slider.two-mode.show-local {
+        transform: translateX(-50%);
     }
 
     #defaultModeContainer, #customModeContainer {
@@ -324,29 +332,30 @@
                     <div class="d-flex flex-column">
                         <h5 class="dynamic-text mb-3 small fw-bold text-uppercase opacity-75">Control Center</h5>
                         <div class="glass-card p-3 d-flex flex-column">
-                            <!-- Fixed Toggle Bar with sliding pill indicator (local dev only) -->
-                            {% if allow_custom %}
-                            <div class="dataset-toggle-container" id="toggleBar">
+                            <!-- Toggle bar: Upload CSV is local-dev only; Local Folder works everywhere -->
+                            <div class="dataset-toggle-container {% if not allow_custom %}two{% endif %}" id="toggleBar">
                                 <span class="toggle-indicator" id="toggleIndicator"></span>
                                 <button type="button" class="dataset-toggle-btn active" id="modeDefault">
                                     <i class="fas fa-database me-1"></i>Default
                                 </button>
+                                {% if allow_custom %}
                                 <button type="button" class="dataset-toggle-btn" id="modeCustom">
                                     <i class="fas fa-file-csv me-1"></i>Upload CSV
                                 </button>
+                                {% endif %}
                                 <button type="button" class="dataset-toggle-btn" id="modeLocal">
                                     <i class="fas fa-folder-open me-1"></i>Local Folder
                                 </button>
                             </div>
-                            {% else %}
+                            {% if not allow_custom %}
                             <div class="alert status-alert-optimized small w-100 mb-2 py-2 dynamic-text rounded-3">
-                                <i class="fas fa-info-circle me-1"></i> Hosted demo: trains on the default dataset. Custom uploads are available in the local version.
+                                <i class="fas fa-info-circle me-1"></i> Hosted demo: browser uploads are disabled here — use the local version for those.
                             </div>
                             {% endif %}
 
                             <!-- Content-only slider synced to toggle -->
                             <div class="mode-slider-container">
-                                <div class="mode-slider {% if not allow_custom %}single-mode{% endif %}" id="modeSlider">
+                                <div class="mode-slider {% if allow_custom %}three-mode{% else %}two-mode{% endif %}" id="modeSlider">
 
                                     <!-- SLIDE 1: Default Dataset -->
                                     <div class="mode-slide text-center" id="defaultModeContainer">
@@ -472,6 +481,7 @@
 
         let selectedFile = null;
         let trainMode = 'default';
+        const isThreeMode = {{ 'true' if allow_custom else 'false' }};
         const modeSlider = document.getElementById('modeSlider');
         const modeDefault = document.getElementById('modeDefault');
         const modeCustom = document.getElementById('modeCustom');
@@ -479,8 +489,8 @@
         const toggleIndicator = document.getElementById('toggleIndicator');
         const localDataset = document.getElementById('localDataset');
 
-        // 3-way toggle: move the pill + slide content in sync
-        // (modeCustom/modeLocal only exist when allow_custom is on — hosted stays Default)
+        // Toggle: move the pill + slide content in sync
+        // (modeCustom only exists when allow_custom is on — hosted has Default + Local)
         function setMode(mode) {
             trainMode = mode;
             [modeDefault, modeCustom, modeLocal].forEach(b => { if (b) b.classList.remove('active'); });
@@ -494,7 +504,8 @@
                 if (modeSlider) modeSlider.classList.add('show-custom');
             } else {
                 if (modeLocal) modeLocal.classList.add('active');
-                if (toggleIndicator) toggleIndicator.classList.add('slide-right');
+                // 3-button bar: pill slides 2 steps; 2-button bar (hosted): 1 step
+                if (toggleIndicator) toggleIndicator.classList.add(isThreeMode ? 'slide-right' : 'slide-mid');
                 if (modeSlider) modeSlider.classList.add('show-local');
             }
         }

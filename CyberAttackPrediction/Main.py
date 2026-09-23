@@ -152,6 +152,21 @@ def apply_optimization_headers(response):
     
     return response
 
+def is_model_file_valid(model_path):
+    """True only if the saved model file loads and contains all required parts.
+
+    The Train page badge ("Current model is valid") uses this — a corrupt or
+    half-written .pkl must NOT show as valid.
+    """
+    try:
+        if not os.path.exists(model_path) or os.path.getsize(model_path) < 1000:
+            return False
+        data = joblib.load(model_path)
+        required = ['rf_model', 'scaler', 'labels', 'label_encoder', 'feature_columns']
+        return isinstance(data, dict) and all(k in data for k in required)
+    except Exception:
+        return False
+
 def load_ml_model():
     """Loads the pre-trained model and preprocessing tools from disk with integrity checks."""
     global rf_model, scaler, labels, label_encoder, feature_columns
@@ -1041,10 +1056,11 @@ def train_view():
     if 'user' not in session:
         return redirect(url_for('UserLogin'))
     
-    # Check if a model has already been trained using the standardized path
+    # Check if a model has already been trained using the standardized path.
+    # Uses real validation (loads the file, checks its parts) — not just exists().
     base_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(base_dir, "model", "trained_rf_model.pkl")
-    model_ready = os.path.exists(model_path)
+    model_ready = is_model_file_valid(model_path)
     
     # List server-side datasets already present in the local Dataset folder,
     # so users can train on big local files without re-uploading via browser.
@@ -1109,8 +1125,8 @@ def TrainAction():
     # so even very large local files (e.g. 300MB+) start instantly.
     local_choice = (request.form.get('local_dataset') or '').strip()
     if local_choice and custom_path is None:
-        if on_hosted:
-            return jsonify({"status": "error", "message": "Local-folder training is available in the local version only."})
+        # Local-folder training is safe on hosted too: no upload happens,
+        # it reads files already on the server disk.
         if '..' in local_choice or '/' in local_choice or '\\' in local_choice \
                 or not local_choice.lower().endswith('.csv'):
             return jsonify({"status": "error", "message": "Invalid local dataset selection."})
