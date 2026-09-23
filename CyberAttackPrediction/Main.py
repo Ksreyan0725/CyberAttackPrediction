@@ -635,6 +635,13 @@ def PredictAction():
             flash("Model not ready. Please run the training process first.", "warning")
             return redirect(url_for('train_view'))
 
+    # Early guard: huge uploads hang the page at "100%" and die on hosted
+    # (request timeout, small RAM). Reject fast with a clear message instead.
+    MAX_PREDICT_MB = 25
+    if request.content_length and request.content_length > MAX_PREDICT_MB * 1024 * 1024:
+        flash(f"File too large ({request.content_length / 1048576:.1f} MB). Keep prediction uploads under {MAX_PREDICT_MB} MB — split big captures into smaller samples.", "error")
+        return redirect(url_for('predictView'))
+
     try:
         # Load test data from the uploaded file
         if 't1' not in request.files:
@@ -654,6 +661,9 @@ def PredictAction():
         upload_path = os.path.join("Dataset", "uploaded_" + filename)
         file.save(upload_path)
         testData_df = pd.read_csv(upload_path)
+        if testData_df.empty:
+            flash("The uploaded CSV is empty — no rows to analyze.", "error")
+            return redirect(url_for('predictView'))
         
         # SCHEMA VALIDATION: Ensure uploaded dataset has the expected features
         if feature_columns is not None:
@@ -703,6 +713,14 @@ def PredictAction():
                              page_type='result', 
                              feature_columns=f_cols)
         
+    except pd.errors.EmptyDataError:
+        print("Error during prediction: uploaded file has no parseable data")
+        flash("Could not read the file — it looks empty or is not a valid CSV.", "error")
+        return redirect(url_for('predictView'))
+    except UnicodeDecodeError:
+        print("Error during prediction: file is not valid UTF-8 text")
+        flash("Could not read the file — it is not a valid text CSV. Export it as CSV (UTF-8) and retry.", "error")
+        return redirect(url_for('predictView'))
     except Exception as e:
         print(f"Error during prediction: {e}")
         flash(f"Analysis failed: {str(e)}", "error")

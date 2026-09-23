@@ -220,6 +220,17 @@
         transition: width 0.1s linear;
     }
 
+    /* Server-analyzing phase: honest motion, no fake numbers */
+    .progress-inner.indeterminate {
+        width: 35% !important;
+        animation: slide-indeterminate 1.1s ease-in-out infinite;
+    }
+
+    @keyframes slide-indeterminate {
+        0% { margin-left: -35%; }
+        100% { margin-left: 100%; }
+    }
+
     .progress-text {
         font-family: 'Monaco', 'Consolas', monospace;
         font-size: 0.75rem;
@@ -302,7 +313,7 @@
                         <!-- Progress Section (Hidden by default) -->
                         <div id="analysis-progress" class="progress-container animate__animated animate__fadeIn">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="progress-text dynamic-text opacity-75">CONDUCTING NEURAL DATA SCAN...</span>
+                                <span id="progress-label" class="progress-text dynamic-text opacity-75">CONDUCTING NEURAL DATA SCAN...</span>
                                 <span id="progress-percent" class="progress-text text-info fw-bold">0%</span>
                             </div>
                             <div class="progress-outer">
@@ -417,49 +428,107 @@
     }
 
 
-    // Form submission with simulated progress
+    // Form submission with REAL upload progress (no fake timer).
+    // Phase 1 (uploading): bar shows actual bytes sent. Phase 2 (server
+    // analyzing): honest indeterminate motion — no invented percentages.
     const predictionForm = document.getElementById('prediction-form');
     const progressBar = document.getElementById('progress-bar-fill');
     const progressPercentText = document.getElementById('progress-percent');
     const progressSection = document.getElementById('analysis-progress');
+    const progressLabel = document.getElementById('progress-label');
+    const MAX_UPLOAD_MB = 25;
+    const analyzeBtnHTML = submitBtn.innerHTML;
+
+    function setProgress(pct, label) {
+        progressBar.style.width = pct + '%';
+        progressPercentText.textContent = Math.round(pct) + '%';
+        if (label) progressLabel.textContent = label;
+    }
+
+    function resetAnalysisUI() {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = analyzeBtnHTML;
+        submitBtn.classList.replace('btn-success', 'btn-primary');
+        progressBar.classList.remove('indeterminate');
+        progressSection.style.display = 'none';
+        setProgress(0, 'CONDUCTING NEURAL DATA SCAN...');
+    }
 
     predictionForm.onsubmit = function(e) {
-        e.preventDefault(); // Prevent immediate submission
+        e.preventDefault(); // We upload via XHR so we can show real progress
 
-        if (!fileInput.files.length) {
+        const file = fileInput.files[0];
+        if (!file) {
             showToast('Please select a file first', 'error');
             return false;
         }
-        
+
+        // Instant client-side guard: matches the server's 25 MB cap, so big
+        // files fail fast with a clear message instead of a stuck "100%".
+        if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+            showToast(`File too large (${formatBytes(file.size)}). Keep prediction uploads under ${MAX_UPLOAD_MB} MB — split big captures into smaller samples.`, 'error');
+            return false;
+        }
+
         // UI Transition
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="skeleton-box" style="width: 20px; height: 20px; border-radius: 50%; vertical-align: middle;"></span> Initializing...';
+        submitBtn.innerHTML = '<span class="skeleton-box" style="width: 20px; height: 20px; border-radius: 50%; vertical-align: middle;"></span> Uploading...';
         progressSection.style.display = 'block';
+        progressBar.classList.remove('indeterminate');
+        setProgress(0, 'UPLOADING DATASET...');
 
-        let progress = 0;
-        const duration = 2500; // 2.5 seconds total
-        const interval = 30; // 30ms updates
-        const increment = (100 / (duration / interval));
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', predictionForm.getAttribute('action'));
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (csrfToken) xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+        xhr.timeout = 10 * 60 * 1000; // 10 min safety net; server usually answers sooner
 
-        const timer = setInterval(() => {
-            progress += increment + (Math.random() * 0.5); // Add some "jitter" for realism
-            if (progress >= 100) {
-                progress = 100;
-                clearInterval(timer);
-                
-                // Final touches before submission
+        // PHASE 1 — real bytes-on-the-wire progress
+        xhr.upload.onprogress = (ev) => {
+            if (ev.lengthComputable) {
+                setProgress((ev.loaded / ev.total) * 100, 'UPLOADING DATASET...');
+            }
+        };
+
+        // PHASE 2 — bytes delivered; server is analyzing (honest motion, no fake %)
+        xhr.upload.onload = () => {
+            setProgress(100, 'UPLOAD COMPLETE — ANALYZING ON SERVER...');
+            progressPercentText.textContent = '…';
+            progressBar.classList.add('indeterminate');
+            submitBtn.innerHTML = '<span class="skeleton-box" style="width: 20px; height: 20px; border-radius: 50%; vertical-align: middle;"></span> Analyzing...';
+        };
+
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                // Success OR a flashed error page (redirects are followed) —
+                // render it so the user always sees what happened.
                 submitBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Analysis Complete';
                 submitBtn.classList.replace('btn-primary', 'btn-success');
-                
-                setTimeout(() => {
-                    predictionForm.submit(); // Perform the real submission
-                }, 500);
+                document.open();
+                document.write(xhr.responseText);
+                document.close();
+            } else if (xhr.status === 413) {
+                showToast('Server rejected the file as too large. Use a file under 25 MB.', 'error');
+                resetAnalysisUI();
+            } else {
+                showToast(`Analysis failed (server error ${xhr.status}). Please try again or use a smaller file.`, 'error');
+                resetAnalysisUI();
             }
-            
-            progressBar.style.width = progress + '%';
-            progressPercentText.textContent = Math.round(progress) + '%';
-        }, interval);
+        };
 
+        xhr.onerror = () => {
+            showToast('Connection lost during analysis. The server may have timed out on a large file — try a smaller sample.', 'error');
+            resetAnalysisUI();
+        };
+
+        xhr.ontimeout = () => {
+            showToast('Analysis timed out (10 min). Split the file into smaller samples and retry.', 'error');
+            resetAnalysisUI();
+        };
+
+        xhr.onabort = () => resetAnalysisUI();
+
+        xhr.send(new FormData(predictionForm));
         return false;
     };
 
