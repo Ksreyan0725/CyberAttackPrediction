@@ -104,12 +104,12 @@
         border: 1px solid var(--glass-border);
     }
 
-    /* The Ultra-Smooth Liquid sliding pill */
+    /* The Ultra-Smooth Liquid sliding pill (3 modes) */
     .toggle-indicator {
         position: absolute;
         top: 4px;
         left: 4px;
-        width: calc(50% - 4px); /* Pure CSS width instead of JS */
+        width: calc((100% - 8px) / 3); /* One third for 3 toggle buttons */
         height: calc(100% - 8px);
         background: var(--primary-color);
         border-radius: 50px;
@@ -122,8 +122,12 @@
         z-index: 0;
     }
 
-    .toggle-indicator.slide-right {
+    .toggle-indicator.slide-mid {
         transform: translateX(100%);
+    }
+
+    .toggle-indicator.slide-right {
+        transform: translateX(200%);
     }
 
     .dataset-toggle-btn {
@@ -190,19 +194,23 @@
 
     .mode-slider {
         display: flex;
-        width: 200%;
+        width: 300%;
         transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
         will-change: transform;
     }
 
     .mode-slide {
-        width: 50%;
+        width: 33.3333%;
         flex-shrink: 0;
         padding: 0.5rem 0 1rem;
     }
 
-    .mode-slider.custom-active {
-        transform: translateX(-50%);
+    .mode-slider.show-custom {
+        transform: translateX(-33.3333%);
+    }
+
+    .mode-slider.show-local {
+        transform: translateX(-66.6666%);
     }
 
     #defaultModeContainer, #customModeContainer {
@@ -311,10 +319,13 @@
                             <div class="dataset-toggle-container" id="toggleBar">
                                 <span class="toggle-indicator" id="toggleIndicator"></span>
                                 <button type="button" class="dataset-toggle-btn active" id="modeDefault">
-                                    <i class="fas fa-database me-1"></i>Default (NSL-KDD)
+                                    <i class="fas fa-database me-1"></i>Default
                                 </button>
                                 <button type="button" class="dataset-toggle-btn" id="modeCustom">
-                                    <i class="fas fa-file-csv me-1"></i>Custom CSV
+                                    <i class="fas fa-file-csv me-1"></i>Upload CSV
+                                </button>
+                                <button type="button" class="dataset-toggle-btn" id="modeLocal">
+                                    <i class="fas fa-folder-open me-1"></i>Local Folder
                                 </button>
                             </div>
 
@@ -352,6 +363,18 @@
                                                 </button>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    <!-- SLIDE 3: Local Folder (server disk, no upload) -->
+                                    <div class="mode-slide" id="localModeContainer">
+                                        <label class="small dynamic-text fw-bold mb-2" for="localDataset">Pick a file already in the server Dataset folder</label>
+                                        <select id="localDataset" class="form-select rounded-3">
+                                            <option value="">-- Select dataset --</option>
+                                            {% for ds in local_datasets %}
+                                            <option value="{{ ds.name }}">{{ ds.name }} ({{ ds.size_mb }} MB)</option>
+                                            {% endfor %}
+                                        </select>
+                                        <div class="xx-small dynamic-muted mt-2">Trains straight from server disk — no upload, instant even for 300MB+ files. Local-only files (e.g. X-IIoTID) appear here on your laptop.</div>
                                     </div>
 
                                 </div>
@@ -431,25 +454,36 @@
         const removeFile = document.getElementById('removeFile');
 
         let selectedFile = null;
+        let trainMode = 'default';
         const modeSlider = document.getElementById('modeSlider');
         const modeDefault = document.getElementById('modeDefault');
         const modeCustom = document.getElementById('modeCustom');
+        const modeLocal = document.getElementById('modeLocal');
         const toggleIndicator = document.getElementById('toggleIndicator');
+        const localDataset = document.getElementById('localDataset');
 
-        // Slide the pill indicator + toggle active label + slide content in sync
-        modeDefault.onclick = function() {
-            modeDefault.classList.add('active');
-            modeCustom.classList.remove('active');
-            toggleIndicator.classList.remove('slide-right');
-            modeSlider.classList.remove('custom-active');
-        };
+        // 3-way toggle: move the pill + slide content in sync
+        function setMode(mode) {
+            trainMode = mode;
+            [modeDefault, modeCustom, modeLocal].forEach(b => b.classList.remove('active'));
+            toggleIndicator.classList.remove('slide-mid', 'slide-right');
+            modeSlider.classList.remove('show-custom', 'show-local');
+            if (mode === 'default') {
+                modeDefault.classList.add('active');
+            } else if (mode === 'custom') {
+                modeCustom.classList.add('active');
+                toggleIndicator.classList.add('slide-mid');
+                modeSlider.classList.add('show-custom');
+            } else {
+                modeLocal.classList.add('active');
+                toggleIndicator.classList.add('slide-right');
+                modeSlider.classList.add('show-local');
+            }
+        }
 
-        modeCustom.onclick = function() {
-            modeCustom.classList.add('active');
-            modeDefault.classList.remove('active');
-            toggleIndicator.classList.add('slide-right');
-            modeSlider.classList.add('custom-active');
-        };
+        modeDefault.onclick = () => setMode('default');
+        modeCustom.onclick = () => setMode('custom');
+        modeLocal.onclick = () => setMode('local');
 
         // File Selection
         dropZone.onclick = () => trainingFile.click();
@@ -523,21 +557,24 @@
 
         if (startBtn) {
             startBtn.addEventListener('click', function() {
-                const isCustom = modeCustom.classList.contains('active');
-                if (isCustom && !selectedFile) {
+                if (trainMode === 'custom' && !selectedFile) {
                     showToast('Please upload a dataset first!', 'warning');
+                    return;
+                }
+                if (trainMode === 'local' && !localDataset.value) {
+                    showToast('Please pick a dataset from the local folder!', 'warning');
                     return;
                 }
 
                 customConfirm(
-                    "Re-Train Model", 
+                    "Re-Train Model",
                     "Are you sure you want to start the training sequence? This will replace the current active model and may take a few moments.",
-                    () => executeTraining(isCustom)
+                    () => executeTraining()
                 );
             });
         }
 
-        async function executeTraining(isCustom) {
+        async function executeTraining() {
             startBtn.disabled = true;
             resultsArea.style.display = 'none';
             logWindow.innerHTML = '';
@@ -545,11 +582,14 @@
             statusBadge.innerHTML = '<i class="fas fa-spinner fa-spin me-1 small"></i> Training...';
 
             addLog("Initializing training environment...");
-            
+
             const formData = new FormData();
-            if (isCustom) {
+            if (trainMode === 'custom') {
                 formData.append('training_data', selectedFile);
                 addLog(`Loading custom dataset: ${selectedFile.name}...`);
+            } else if (trainMode === 'local') {
+                formData.append('local_dataset', localDataset.value);
+                addLog(`Loading local dataset from server disk: ${localDataset.value} (no upload)...`);
             } else {
                 addLog("Loading default NSL-KDD dataset (20,000 samples)...");
             }

@@ -1046,8 +1046,25 @@ def train_view():
     model_path = os.path.join(base_dir, "model", "trained_rf_model.pkl")
     model_ready = os.path.exists(model_path)
     
+    # List server-side datasets already present in the local Dataset folder,
+    # so users can train on big local files without re-uploading via browser.
+    local_datasets = []
+    dataset_dir = os.path.join(base_dir, "Dataset")
+    try:
+        if os.path.isdir(dataset_dir):
+            for _f in sorted(os.listdir(dataset_dir)):
+                if _f.lower().endswith('.csv'):
+                    _p = os.path.join(dataset_dir, _f)
+                    if os.path.isfile(_p):
+                        local_datasets.append({
+                            "name": _f,
+                            "size_mb": round(os.path.getsize(_p) / (1024 * 1024), 1),
+                        })
+    except Exception:
+        pass
+
     train_result = session.get('train_result')
-    return render_template('Train.html', page_type='train', model_ready=model_ready, train_result=train_result)
+    return render_template('Train.html', page_type='train', model_ready=model_ready, train_result=train_result, local_datasets=local_datasets)
 
 @app.route('/DownloadSample')
 def DownloadSample():
@@ -1073,12 +1090,27 @@ def TrainAction():
             dataset_dir = os.path.join(base_dir, "Dataset")
             if not os.path.exists(dataset_dir):
                 os.makedirs(dataset_dir)
-            
+
             custom_path = os.path.join(dataset_dir, "custom_train.csv")
             try:
                 file.save(custom_path)
             except Exception as e:
                 return jsonify({"status": "error", "message": f"Failed to save training file: {str(e)}"})
+
+    # Option: use a file already present in the server's local Dataset folder.
+    # No browser upload happens — training reads straight from server disk,
+    # so even very large local files (e.g. 300MB+) start instantly.
+    local_choice = (request.form.get('local_dataset') or '').strip()
+    if local_choice and custom_path is None:
+        if '..' in local_choice or '/' in local_choice or '\\' in local_choice \
+                or not local_choice.lower().endswith('.csv'):
+            return jsonify({"status": "error", "message": "Invalid local dataset selection."})
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        dataset_dir = os.path.abspath(os.path.join(base_dir, "Dataset"))
+        candidate = os.path.abspath(os.path.join(dataset_dir, local_choice))
+        if not candidate.startswith(dataset_dir + os.sep) or not os.path.isfile(candidate):
+            return jsonify({"status": "error", "message": "Selected local dataset not found."})
+        custom_path = candidate
     
     # Call training with optional path
     global system_status
