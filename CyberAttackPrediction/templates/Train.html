@@ -109,7 +109,7 @@
         position: absolute;
         top: 4px;
         left: 4px;
-        width: 0; /* Managed by Liquid-JS */
+        width: calc(50% - 4px); /* Pure CSS width instead of JS */
         height: calc(100% - 8px);
         background: var(--primary-color);
         border-radius: 50px;
@@ -436,30 +436,20 @@
         const modeCustom = document.getElementById('modeCustom');
         const toggleIndicator = document.getElementById('toggleIndicator');
 
-        function syncIndicator(btn) {
-            if (!toggleIndicator || !btn) return;
-            toggleIndicator.style.width = `${btn.offsetWidth}px`;
-            toggleIndicator.style.transform = `translateX(${btn.offsetLeft - 4}px)`; // Offset for container padding
-        }
-
         // Slide the pill indicator + toggle active label + slide content in sync
         modeDefault.onclick = function() {
             modeDefault.classList.add('active');
             modeCustom.classList.remove('active');
-            syncIndicator(this);
+            toggleIndicator.classList.remove('slide-right');
             modeSlider.classList.remove('custom-active');
         };
 
         modeCustom.onclick = function() {
             modeCustom.classList.add('active');
             modeDefault.classList.remove('active');
-            syncIndicator(this);
+            toggleIndicator.classList.add('slide-right');
             modeSlider.classList.add('custom-active');
         };
-
-        // Initialize for fluid morphing on load/resize
-        window.addEventListener('load', () => syncIndicator(document.querySelector('.dataset-toggle-btn.active')));
-        window.addEventListener('resize', () => syncIndicator(document.querySelector('.dataset-toggle-btn.active')));
 
         // File Selection
         dropZone.onclick = () => trainingFile.click();
