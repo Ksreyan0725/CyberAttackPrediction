@@ -183,6 +183,47 @@
     }
 
 
+    /* Local Folder dropdown: follows site dark/light theme via theme variables */
+    .local-select {
+        width: 100%;
+        appearance: none;
+        -webkit-appearance: none;
+        background-color: var(--input-bg);
+        color: var(--input-text);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 0.6rem 2.5rem 0.6rem 0.9rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        color-scheme: dark;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath d='M2 5l6 6 6-6' fill='none' stroke='%23e0e0e0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.9rem center;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .local-select:hover {
+        border-color: var(--primary-color);
+    }
+
+    .local-select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
+    }
+
+    .local-select option {
+        background-color: var(--bg-base);
+        color: var(--input-text);
+    }
+
+    /* Light mode: dark text + dark chevron + light popup */
+    .light-mode .local-select {
+        color-scheme: light;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath d='M2 5l6 6 6-6' fill='none' stroke='%23212529' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+
     /* Sliding Transition Styles */
     .mode-slider-container {
         position: relative;
@@ -394,7 +435,7 @@
                                     <!-- SLIDE 3: Local Folder (server disk, no upload) -->
                                     <div class="mode-slide" id="localModeContainer">
                                         <label class="small dynamic-text fw-bold mb-2" for="localDataset">Pick a file already in the server Dataset folder</label>
-                                        <select id="localDataset" class="form-select rounded-3">
+                                        <select id="localDataset" class="local-select">
                                             <option value="">-- Select dataset --</option>
                                             {% for ds in local_datasets %}
                                             <option value="{{ ds.name }}">{{ ds.name }} ({{ ds.size_mb }} MB)</option>

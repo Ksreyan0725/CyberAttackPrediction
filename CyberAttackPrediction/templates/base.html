@@ -1032,10 +1032,24 @@
                     const t = bootstrap.Tooltip.getInstance(tg);
                     if (t) t.hide();
                 }
-                const c = gt();
-                let n = c === 'auto' ? 'light' : (c === 'light' ? 'dark' : 'auto');
+                // Single-click 3-mode cycle: auto -> opposite-of-system -> ... -> auto.
+                // From 'auto' we jump to the mode that looks different, so the
+                // click always flips the display. (Stepping INTO auto can match
+                // the current display since Auto copies the OS theme — a toast
+                // names the mode on that step so the click still answers.)
+                const sysDark = window.matchMedia('(prefers-color-scheme:dark)').matches;
+                const cur = gt();
+                let n;
+                if (cur === 'auto') n = sysDark ? 'light' : 'dark';
+                else if (cur === 'light') n = 'dark';
+                else n = 'auto';
+                const wasDark = !htm.classList.contains('light-mode');
                 localStorage.setItem('theme', n);
                 ut(n, true);
+                const isDark = !htm.classList.contains('light-mode');
+                if (wasDark === isDark && typeof showToast !== 'undefined') {
+                    showToast(`Theme: Auto Mode (following system: ${isDark ? 'Dark' : 'Light'})`, 'info');
+                }
             });
         })();
         // Global Heartbeat
