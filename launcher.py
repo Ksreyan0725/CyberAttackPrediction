@@ -229,43 +229,47 @@ def is_package_installed(package_name):
 
 # --- BLOCK 3: THE LAUNCHER FUNCTIONS (THE ACTIONS) ---
 
-def run_script(script_name, new_window=False):
+def run_script(mode, new_window=False):
     """
     PURPOSE: This function is the engine that launches your project dashboards.
-    - script_name: The name of the file to run (like 'Start_WebApp_Venv.bat').
-    - new_window: A 'True/False' check. If True, it spawns a fresh separate terminal window.
+    It now uses the virtual environment natively, eliminating external .bat scripts.
     """
-    # os.path.join: This smartly combines 'Project Folder' + 'Script Name' into a valid Windows path.
-    script_path = os.path.join(root_dir, script_name)
+    venv_python = os.path.join(root_dir, '.venv', 'Scripts', 'python.exe')
+    venv_jupyter = os.path.join(root_dir, '.venv', 'Scripts', 'jupyter-notebook.exe')
+    target_dir = os.path.join(root_dir, 'CyberAttackPrediction')
+    
+    if mode == 'webapp' and not os.path.exists(venv_python):
+        print(f"[-] Error: Virtual environment python missing at {venv_python}")
+        return
+    elif mode == 'jupyter' and not os.path.exists(venv_jupyter):
+        print(f"[-] Error: Jupyter missing at {venv_jupyter}")
+        return
 
-    # os.path.exists: This checks if the file is actually there. If not, we print an error instead of crashing.
-    if not os.path.exists(script_path):
-        print(f"[-] Error: Script '{script_name}' not found.")
-        return # 'return' exits the function immediately if the file is missing.
-
-    # This creates a label to tell the user HOW the script is starting.
     mode_label = "NEW TERMINAL" if new_window else "INTEGRATED"
     print(f"[+] Launching CyberShield Engine ({mode_label})")
-    print(f"[+] Script: {script_name}")
+    print(f"[+] Mode: {mode.upper()}")
     print("--------------------------------------------------")
     
     try:
+        # Build the native command
+        if mode == 'webapp':
+            cmd = [venv_python, "Main.py"]
+        elif mode == 'jupyter':
+            cmd = [venv_jupyter, "--browser=cmd /c start chrome --incognito %s"]
+            
         if new_window:
-            # subprocess.Popen: This starts a process in the background.
-            # 'start cmd /k': This is a Windows-specific command to open a new Command Prompt window and Keep (/k) it open.
-            subprocess.Popen(['start', 'cmd', '/k', script_path], shell=True)
+            # Pass the command to a new cmd window
+            cmd_str = ' '.join(f'"{c}"' if ' ' in c else c for c in cmd)
+            subprocess.Popen(f'start cmd /k "cd /d "{target_dir}" && {cmd_str}"', shell=True)
             print(f"{GREEN}[*] Process spawned in separate window successfully.{RESET}")
         else:
-            # subprocess.run: This runs the command right here and WAITS for it to finish.
-            # check=True: This means if the script fails, Python will raise an error so we can catch it.
-            subprocess.run([script_path], shell=True, check=True)
+            # Run in the same terminal
+            subprocess.run(cmd, cwd=target_dir, check=True)
             
     except KeyboardInterrupt:
-        # This catches when you press Ctrl+C to stop a program manually.
         print(f"\n{YELLOW}[!] Launcher: Process interrupted by user.{RESET}")
     except Exception as e:
-        # This catches any other random error (like a missing file or permission issue) and shows you exactly what went wrong ({e}).
-        log_system_event(f"Script Execution Error ({script_name}): {str(e)}", level="ERROR")
+        log_system_event(f"Execution Error ({mode}): {str(e)}", level="ERROR")
         print(f"\n{RED}[-] Launcher Error: {e}{RESET}")
 
 def harden_environment():
@@ -822,14 +826,14 @@ def render_premium_menu(health_data=None, current_input=""):
     now = datetime.now().strftime("%I:%M %p")
     admin_tag = "[bold green]ADMIN[/]" if IS_ADMIN else "[bold yellow]USER[/]"
     
-    # 💡 REFINED HEADING: Unified Info Box as requested
+    # 💡 REFINED HEADING: Unified Info Box
     header_grid = Table.grid(expand=True)
-    header_grid.add_column(justify="left")
-    header_grid.add_column(justify="center")
-    header_grid.add_column(justify="right")
+    header_grid.add_column(justify="left", ratio=1)
+    header_grid.add_column(justify="center", ratio=2)
+    header_grid.add_column(justify="right", ratio=1)
     
     env_badge = f"[bold white]Env:[/] [bold {('green' if IS_VIRTUAL else 'yellow')}]{VENV_NAME}[/]"
-    center_title = f"🛡️  [bold cyan]CYBERSHIELD COMMAND CENTER[/]  [dim]{CONFIG['VERSION']}[/]"
+    center_title = f"[bold cyan]CYBERSHIELD COMMAND CENTER[/]  [dim]{CONFIG['VERSION']}[/]"
     status_badge = f"{admin_tag} | [bold cyan]{now}[/]"
     
     header_grid.add_row(env_badge, center_title, status_badge)
@@ -873,12 +877,12 @@ def render_premium_menu(health_data=None, current_input=""):
         maint_grid.add_row("[bold green]18.[/] Speed Test", "[bold white]19.[/] Help")
         
         menu_columns.add_row(
-            Panel(launch_text, title="[green]🚀 LAUNCH[/]", border_style="green"),
-            Panel(system_text, title="[magenta]🛠️ OPS[/]", border_style="magenta")
+            Panel(launch_text, title="[green]LAUNCH[/]", border_style="green"),
+            Panel(system_text, title="[magenta]OPS[/]", border_style="magenta")
         )
         menu_columns.add_row(
-            Panel(git_text, title="[yellow]📦 GIT[/]", border_style="yellow"),
-            Panel(maint_grid, title="[blue]🛡️ MAINT[/]", border_style="blue")
+            Panel(git_text, title="[yellow]GIT[/]", border_style="yellow"),
+            Panel(maint_grid, title="[blue]MAINT[/]", border_style="blue")
         )
         left_col = menu_columns
     else:
@@ -896,8 +900,7 @@ def render_premium_menu(health_data=None, current_input=""):
         user_opt_grid.add_row("[bold red]13[/] Restart",       "[bold red]14[/] Exit Hub")
 
         user_help_line = Text("  Type a number to run a command  |  'help' for details  |  '14' to exit", style="dim white")
-        left_col = Panel(user_opt_grid, title="[bold cyan]⚡ COMMANDS[/]", border_style="cyan", padding=(0, 2))
-
+        left_col = Panel(user_opt_grid, title="[bold cyan]COMMANDS[/]", border_style="cyan", padding=(0, 2))
 
 
 
@@ -918,7 +921,8 @@ def render_premium_menu(health_data=None, current_input=""):
     status_table.add_row("Telemetry",  psutil_status)
     status_table.add_row("Privilege",  admin_status)
     
-    sidebar_panel = Panel(status_table, title="[cyan]🛰️ STATUS[/]", border_style="cyan", padding=(0, 1))
+    sidebar_height = 10 if IS_ADMIN else 9
+    sidebar_panel = Panel(status_table, title="[cyan]STATUS[/]", border_style="cyan", padding=(0, 1), height=sidebar_height)
 
 
     grid.add_row(left_col, sidebar_panel)
@@ -944,7 +948,7 @@ def render_premium_menu(health_data=None, current_input=""):
     if not IS_ADMIN:
         footer.append(user_help_line)
         footer.append("\n")
-    footer.append(f"  Tip: Type 'help' for details  |  Session Log: {os.path.basename(LOG_FILE)}", style="dim white")
+    footer.append(f"  Tip: Type 'help' for details  |  Session Log: {os.path.basename(LOG_FILE)}\n", style="dim white")
     
     components.append(footer)
 
@@ -1163,18 +1167,16 @@ def main():
                 if confirm != 'y': continue
 
             if choice == '1':
-                run_script("Start_WebApp_Venv.bat", new_window=False)
+                run_script("webapp", new_window=False)
 
             elif choice == '2':
-                run_script("Start_WebApp_Venv.bat", new_window=True)
-                input("\n[!] External Process Started. Press ENTER to return to menu...")
+                run_script("webapp", new_window=True)
 
             elif choice in ['3', 'jupyter', 'notebook']:
-                run_script("Start_Jupyter_Venv.bat", new_window=False)
+                run_script("jupyter", new_window=False)
 
             elif choice == '4':
-                run_script("Start_Jupyter_Venv.bat", new_window=True)
-                input("\n[!] External Process Started. Press ENTER to return to menu...")
+                run_script("jupyter", new_window=True)
 
             elif choice in ['5', 'harden', 'setup', 'install']:
                 harden_environment()
