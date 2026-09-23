@@ -11,9 +11,9 @@ __pycache__/
 # Data & Models (Commonly large files)
 CyberAttackPrediction/Dataset/*.csv
 CyberAttackPrediction/static/Dataset/*.csv
-CyberAttackPrediction/model/*.hdf5
-*.pkl
-*.h5
+#CyberAttackPrediction/model/*.hdf5
+#*.pkl
+#*.h5
 
 # Allow specific extensions in backups
 !backups/**/*.zip
@@ -65,7 +65,8 @@ saved_creds.json
 CyberAttackPrediction/saved_creds.json
 users.json
 CyberAttackPrediction/users.json
- 
+
+ 
 *.log
 launcher_debug.log
 *.pyc
