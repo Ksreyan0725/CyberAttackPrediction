@@ -1064,7 +1064,11 @@ def train_view():
         pass
 
     train_result = session.get('train_result')
-    return render_template('Train.html', page_type='train', model_ready=model_ready, train_result=train_result, local_datasets=local_datasets)
+    # Custom datasets (browser upload + local folder) are a local-dev feature.
+    # Render sets RENDER=true and has an ephemeral disk with 512MB RAM, so
+    # big uploads would fail there — hosted site stays Default-only.
+    allow_custom = os.getenv('RENDER', '') != 'true'
+    return render_template('Train.html', page_type='train', model_ready=model_ready, train_result=train_result, local_datasets=local_datasets, allow_custom=allow_custom)
 
 @app.route('/DownloadSample')
 def DownloadSample():
@@ -1082,9 +1086,12 @@ def TrainAction():
     
     # Check if a custom file was uploaded
     custom_path = None
+    on_hosted = os.getenv('RENDER', '') == 'true'
     if 'training_data' in request.files:
         file = request.files['training_data']
         if file.filename != '':
+            if on_hosted:
+                return jsonify({"status": "error", "message": "Custom uploads are available in the local version only."})
             # Ensure Dataset directory exists
             base_dir = os.path.dirname(os.path.abspath(__file__))
             dataset_dir = os.path.join(base_dir, "Dataset")
@@ -1102,6 +1109,8 @@ def TrainAction():
     # so even very large local files (e.g. 300MB+) start instantly.
     local_choice = (request.form.get('local_dataset') or '').strip()
     if local_choice and custom_path is None:
+        if on_hosted:
+            return jsonify({"status": "error", "message": "Local-folder training is available in the local version only."})
         if '..' in local_choice or '/' in local_choice or '\\' in local_choice \
                 or not local_choice.lower().endswith('.csv'):
             return jsonify({"status": "error", "message": "Invalid local dataset selection."})

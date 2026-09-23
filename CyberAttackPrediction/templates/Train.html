@@ -213,6 +213,15 @@
         transform: translateX(-66.6666%);
     }
 
+    /* Hosted (Render) mode: single Default slide, no toggle bar */
+    .mode-slider.single-mode {
+        width: 100%;
+    }
+
+    .mode-slider.single-mode .mode-slide {
+        width: 100%;
+    }
+
     #defaultModeContainer, #customModeContainer {
         display: block !important; /* Managed by the slider now */
     }
@@ -315,7 +324,8 @@
                     <div class="d-flex flex-column">
                         <h5 class="dynamic-text mb-3 small fw-bold text-uppercase opacity-75">Control Center</h5>
                         <div class="glass-card p-3 d-flex flex-column">
-                            <!-- Fixed Toggle Bar with sliding pill indicator -->
+                            <!-- Fixed Toggle Bar with sliding pill indicator (local dev only) -->
+                            {% if allow_custom %}
                             <div class="dataset-toggle-container" id="toggleBar">
                                 <span class="toggle-indicator" id="toggleIndicator"></span>
                                 <button type="button" class="dataset-toggle-btn active" id="modeDefault">
@@ -328,10 +338,15 @@
                                     <i class="fas fa-folder-open me-1"></i>Local Folder
                                 </button>
                             </div>
+                            {% else %}
+                            <div class="alert status-alert-optimized small w-100 mb-2 py-2 dynamic-text rounded-3">
+                                <i class="fas fa-info-circle me-1"></i> Hosted demo: trains on the default dataset. Custom uploads are available in the local version.
+                            </div>
+                            {% endif %}
 
                             <!-- Content-only slider synced to toggle -->
                             <div class="mode-slider-container">
-                                <div class="mode-slider" id="modeSlider">
+                                <div class="mode-slider {% if not allow_custom %}single-mode{% endif %}" id="modeSlider">
 
                                     <!-- SLIDE 1: Default Dataset -->
                                     <div class="mode-slide text-center" id="defaultModeContainer">
@@ -339,6 +354,7 @@
                                         <p class="small dynamic-muted mb-0 px-2">Ready to re-train using the standard <strong>NSL-KDD</strong> reference dataset.</p>
                                     </div>
 
+                                    {% if allow_custom %}
                                     <!-- SLIDE 2: Custom CSV -->
                                     <div class="mode-slide" id="customModeContainer">
                                         <div class="upload-zone" id="dropZone">
@@ -376,6 +392,7 @@
                                         </select>
                                         <div class="xx-small dynamic-muted mt-2">Trains straight from server disk — no upload, instant even for 300MB+ files. Local-only files (e.g. X-IIoTID) appear here on your laptop.</div>
                                     </div>
+                                    {% endif %}
 
                                 </div>
                             </div>
@@ -463,39 +480,42 @@
         const localDataset = document.getElementById('localDataset');
 
         // 3-way toggle: move the pill + slide content in sync
+        // (modeCustom/modeLocal only exist when allow_custom is on — hosted stays Default)
         function setMode(mode) {
             trainMode = mode;
-            [modeDefault, modeCustom, modeLocal].forEach(b => b.classList.remove('active'));
-            toggleIndicator.classList.remove('slide-mid', 'slide-right');
-            modeSlider.classList.remove('show-custom', 'show-local');
+            [modeDefault, modeCustom, modeLocal].forEach(b => { if (b) b.classList.remove('active'); });
+            if (toggleIndicator) toggleIndicator.classList.remove('slide-mid', 'slide-right');
+            if (modeSlider) modeSlider.classList.remove('show-custom', 'show-local');
             if (mode === 'default') {
-                modeDefault.classList.add('active');
+                if (modeDefault) modeDefault.classList.add('active');
             } else if (mode === 'custom') {
-                modeCustom.classList.add('active');
-                toggleIndicator.classList.add('slide-mid');
-                modeSlider.classList.add('show-custom');
+                if (modeCustom) modeCustom.classList.add('active');
+                if (toggleIndicator) toggleIndicator.classList.add('slide-mid');
+                if (modeSlider) modeSlider.classList.add('show-custom');
             } else {
-                modeLocal.classList.add('active');
-                toggleIndicator.classList.add('slide-right');
-                modeSlider.classList.add('show-local');
+                if (modeLocal) modeLocal.classList.add('active');
+                if (toggleIndicator) toggleIndicator.classList.add('slide-right');
+                if (modeSlider) modeSlider.classList.add('show-local');
             }
         }
 
-        modeDefault.onclick = () => setMode('default');
-        modeCustom.onclick = () => setMode('custom');
-        modeLocal.onclick = () => setMode('local');
+        if (modeDefault) modeDefault.onclick = () => setMode('default');
+        if (modeCustom) modeCustom.onclick = () => setMode('custom');
+        if (modeLocal) modeLocal.onclick = () => setMode('local');
 
-        // File Selection
-        dropZone.onclick = () => trainingFile.click();
-        trainingFile.onchange = (e) => handleFile(e.target.files[0]);
-        
-        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
-        dropZone.ondragleave = () => dropZone.classList.remove('dragover');
-        dropZone.ondrop = (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            handleFile(e.dataTransfer.files[0]);
-        };
+        // File Selection (upload controls only exist when allow_custom is on)
+        if (dropZone && trainingFile) {
+            dropZone.onclick = () => trainingFile.click();
+            trainingFile.onchange = (e) => handleFile(e.target.files[0]);
+
+            dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+            dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+            dropZone.ondrop = (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                handleFile(e.dataTransfer.files[0]);
+            };
+        }
 
         function handleFile(file) {
             if (!file) return;
@@ -508,11 +528,11 @@
             filePreview.style.display = 'block';
         }
 
-        removeFile.onclick = (e) => {
+        if (removeFile) removeFile.onclick = (e) => {
             e.stopPropagation();
             selectedFile = null;
-            filePreview.style.display = 'none';
-            trainingFile.value = '';
+            if (filePreview) filePreview.style.display = 'none';
+            if (trainingFile) trainingFile.value = '';
         };
 
         function addLog(msg, type = 'info') {
@@ -561,7 +581,7 @@
                     showToast('Please upload a dataset first!', 'warning');
                     return;
                 }
-                if (trainMode === 'local' && !localDataset.value) {
+                if (trainMode === 'local' && (!localDataset || !localDataset.value)) {
                     showToast('Please pick a dataset from the local folder!', 'warning');
                     return;
                 }
