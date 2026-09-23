@@ -1177,7 +1177,7 @@
 
                 // Swap content
                 await delay(250);
-                contentEl.innerHTML = (data.html || '') + `
+                const rawHTML = (data.html || '') + `
                     <div id="refresh-overlay" class="refresh-overlay">
                         <div class="scanner-beam"></div>
                         <div class="neural-spinner">
@@ -1186,6 +1186,7 @@
                         <div class="neural-text">Neural Refreshing...</div>
                     </div>
                 `;
+                contentEl.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(rawHTML) : rawHTML;
 
                 if (data.title) document.title = data.title + ' — CyberShield AI';
 
@@ -1390,30 +1391,32 @@
 
                 const data = await res.json();
                 
+                const appendLog = (text, className) => {
+                    if (!text) return;
+                    const div = document.createElement('div');
+                    div.className = `exec-line ${className}`;
+                    div.textContent = text;
+                    outputEl.appendChild(div);
+                };
+
                 if (data.status === 'success') {
-                    const esc = (s) => String(s).replace(/[&<>'"]/g, t => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[t]||t));
-                    let finalHTML = '';
-                    if (data.stdout) {
-                        finalHTML += `<div class="exec-line exec-stdout">${esc(data.stdout)}</div>`;
-                    }
-                    if (data.stderr) {
-                        finalHTML += `<div class="exec-line exec-stderr">${esc(data.stderr)}</div>`;
-                    }
-                    
-                    outputEl.innerHTML += finalHTML;
-                    outputEl.innerHTML += `<div class="exec-line text-success fw-bold">Process terminated with exit code: ${esc(data.returncode)}</div>`;
+                    appendLog(data.stdout, 'exec-stdout');
+                    appendLog(data.stderr, 'exec-stderr');
+                    appendLog(`Process terminated with exit code: ${data.returncode}`, 'text-success fw-bold');
                     
                     statusEl.textContent = data.returncode === 0 ? 'SUCCESS' : 'FAILED';
                     statusEl.className = 'x-small fw-bold letter-spacing-1 ' + (data.returncode === 0 ? 'text-success' : 'text-danger');
                 } else {
-                    const esc = (s) => String(s).replace(/[&<>'"]/g, t => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[t]||t));
-                    outputEl.innerHTML += `<div class="exec-line exec-stderr">System Failure: ${esc(data.message)}</div>`;
+                    appendLog(`System Failure: ${data.message}`, 'exec-stderr');
                     statusEl.textContent = 'ERROR';
                     statusEl.className = 'x-small fw-bold letter-spacing-1 text-danger';
                 }
             } catch (err) {
-                const esc = (s) => String(s).replace(/[&<>'"]/g, t => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[t]||t));
-                outputEl.innerHTML += `<div class="exec-line exec-stderr">Network/Neural Interruption: ${esc(err.message)}</div>`;
+                const div = document.createElement('div');
+                div.className = 'exec-line exec-stderr';
+                div.textContent = `Network/Neural Interruption: ${err.message}`;
+                outputEl.appendChild(div);
+                
                 statusEl.textContent = 'OFFLINE';
                 statusEl.className = 'x-small fw-bold letter-spacing-1 text-danger';
             }

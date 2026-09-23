@@ -543,7 +543,7 @@
                 body.innerHTML = '<tr><td class="text-center py-5 tracking-widest text-danger">ACCESS DENIED: CLEARANCE LEVEL LOWER THAN ADMIN</td></tr>';
             } else {
                 const esc = (str) => String(str).replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag]));
-                body.innerHTML = users.map((u, i) => {
+                const rawHTML = users.map((u, i) => {
                     const safeName = esc(u.username);
                     const safeRole = esc(u.role);
                     return `
@@ -572,7 +572,8 @@
                             </div>
                         </td>
                     </tr>
-                `}).join('');
+                }).join('');
+                body.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(rawHTML) : rawHTML;
             }
             loader.style.display = 'none';
             wrap.style.display = 'block';

@@ -852,8 +852,12 @@ def explorer():
         if ext == '.docx':
             content = "[Binary Word Data]" # Placeholder for reading branch
         else:
-            import pathlib
-            content = pathlib.Path(full_path).read_text(encoding='utf-8')
+            fd = os.open(full_path, os.O_RDONLY)
+            try:
+                # Read up to 10MB
+                content = os.read(fd, 10485760).decode('utf-8')
+            finally:
+                os.close(fd)
             
         display_path = doc_path.replace('\\', '/')
         if ext == '.md':

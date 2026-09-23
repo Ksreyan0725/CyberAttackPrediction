@@ -819,7 +819,10 @@
                 // Navigation Watchdog: If we click a link, preserve the FS state
                 document.addEventListener('click', (e) => {
                     const link = e.target.closest('a');
-                    if (link && link.href && !link.href.startsWith('#') && !link.href.toLowerCase().startsWith('javascript:')) {
+                    if (link && link.href && !link.href.startsWith('#')) {
+                        let isJs = false;
+                        try { isJs = new URL(link.href).protocol === 'javascript:'; } catch(e) {}
+                        if (!isJs) {
                         if (this.getFullscreenElement()) {
                             localStorage.setItem(this.config.storageKey, 'active');
                         }
@@ -943,7 +946,9 @@
                 if (!a || a.getAttribute('href') === '#' || a.classList.contains('dropdown-toggle')) return;
                 
                 const hr = a.getAttribute('href');
-                if (!hr || hr.toLowerCase().startsWith('javascript:')) return;
+                let isJs = false;
+                try { isJs = new URL(hr, window.location.origin).protocol === 'javascript:'; } catch(e) {}
+                if (!hr || isJs) return;
                 
                 if (normalize(a.href) === normalize(window.location.href)) {
                     e.preventDefault();
