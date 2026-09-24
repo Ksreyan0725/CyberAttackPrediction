@@ -49,7 +49,15 @@
 
 ---
 
-[![python-dotenv](https://img.shields.io/badge/python--dotenv-Config-84CC16?style=flat-square&logoColor=white)](https://pypi.org/project/python-dotenv) **Environment Synchronization**: Loads sensitive configuration like `FLASK_SECRET_KEY` from the `.env` file, ensuring security during staging and presentation.
+[![python-dotenv](https://img.shields.io/badge/python--dotenv-Config-84CC16?style=flat-square&logoColor=white)](https://pypi.org/project/python-dotenv) **Environment Synchronization**: Loads sensitive configuration like `FLASK_SECRET_KEY` from the `.env` file when present. If the env var is missing, `Main.py` falls back to a gitignored `.flask_secret` file so sessions stay stable across gunicorn worker recycles. On Render, prefer the platform env var (ephemeral disk).
+
+---
+
+[![Gunicorn](https://img.shields.io/badge/Gunicorn-WSGI-4338CA?style=flat-square&logo=gunicorn&logoColor=white)](https://gunicorn.org) **Production WSGI Server**: The container runs `gunicorn --workers 1 --threads 2 --max-requests 100 --bind 0.0.0.0:$PORT Main:app` under supervisord (see `supervisord.conf`). Local demos may still use `python Main.py` / the Flask dev server on port 2026.
+
+---
+
+[![requests](https://img.shields.io/badge/requests-HTTP-3776AB?style=flat-square&logo=python&logoColor=white)](https://pypi.org/project/requests) **HTTP Client**: Pinned in `requirements.txt` for outbound calls (error-bus sidecar helpers, health checks).
 
 ---
 
@@ -128,7 +136,7 @@ CyberShield AI operates on a state-aware execution loop that maintains data inte
 
 ### 1 · Secure Training Lifecycle
 
-Training is handled as an **Asynchronous Process** to prevent UI blocking. The frontend monitors the backend "Heartbeat" to provide real-time status updates without manual page refreshes.
+Training is handled as an **Asynchronous Process** to prevent UI blocking. The frontend monitors the backend via **`GET /api/heartbeat`** (registered by `error_bus.py`) to provide real-time status updates without manual page refreshes.
 
 ```mermaid
 sequenceDiagram
@@ -159,6 +167,8 @@ sequenceDiagram
     Note over U: UI shows "System Ready"
 ```
 
+> `/api/heartbeat` is registered by `error_bus.py` (`register_error_bus(app)`), not by a route decorator in `Main.py` itself.
+
 ### 2 · Secure Inference Lifecycle (Predict)
 
 Prediction utilizes the **In-Memory Model Cache** for sub-millisecond classification. Every request is hardened by security middlewares before reaching the AI core.
@@ -187,9 +197,10 @@ sequenceDiagram
 
 #### A · Authentication & Heartbeat
 
-- **Entry**: `/UserLogin` validates credentials via `werkzeug` scrypt.
-- **Pulse Start**: On successful login, the `base.html` initializes a `setInterval` that pings `/api/heartbeat` every 3000ms.
+- **Entry**: `/UserLoginAction` validates credentials via `werkzeug` hashing.
+- **Pulse**: `base.html` polls `/api/heartbeat` (route provided by `error_bus.py`) on an interval for connectivity/health.
 - **Session Focus**: CSRF tokens are stored in the server-side session, ensuring that all prediction uploads originate from the authenticated user.
+- **JSON vs HTML**: Clients that send `Accept: application/json` receive structured envelopes from `wants_json()` (login returns `{ok, data.redirect}`); browser form posts keep normal redirects.
 
 #### B · Post-Processing & GenAI Mapping
 
@@ -277,27 +288,38 @@ This modern visualization tracks the data lifecycle from user interaction to bac
 graph TD
     %% Node Definitions
     User["🌍 USER BROWSER<br/>(Login → Train → Predict)"]
-    Server["🔥 MAIN.PY<br/>(Flask Server)"]
+    Sup["⚙️ SUPERVISORD<br/>(container PID 1)"]
+    Gunicorn["🦅 GUNICORN<br/>(bind $PORT)"]
+    Server["🔥 MAIN.PY<br/>(Flask app)"]
+    Bus["🚌 ERROR-BUS<br/>(Go sidecar :9090)"]
     Train["🧠 train_model.py<br/>(ML Training Engine)"]
     Model["📦 model/<br/>(.pkl + weights)"]
     Dataset["📊 Dataset/<br/>(kdd_train.csv)"]
 
     %% Flow Connections
-    User -- "AJAX / Form POST<br/>(+ CSRF Hardening)" --> Server
-    
+    User -- "AJAX / Form POST<br/>(+ CSRF Hardening)" --> Sup
+    Sup -- "program: flask" --> Gunicorn
+    Sup -- "program: error-bus" --> Bus
+    Gunicorn -- "WSGI" --> Server
     Server -- "Executes" --> Train
     Server -- "Loads Model" --> Model
-    
+    Server -- "emit_event / health" --> Bus
+
     Train -- "Saves Artifacts" --> Model
     Train -- "Reads Data" --> Dataset
 
     %% Styling
     style User fill:#1a1a2e,stroke:#3066be,stroke-width:2px,color:#fff
+    style Sup fill:#162447,stroke:#e94560,stroke-width:2px,color:#fff
+    style Gunicorn fill:#162447,stroke:#3066be,stroke-width:2px,color:#fff
     style Server fill:#162447,stroke:#e94560,stroke-width:2px,color:#fff
+    style Bus fill:#1f4068,stroke:#00d2ff,stroke-width:2px,color:#fff
     style Train fill:#1f4068,stroke:#00d2ff,stroke-width:2px,color:#fff
     style Model fill:#0f3460,stroke:#f8b400,stroke-width:2px,color:#fff
     style Dataset fill:#0f3460,stroke:#4ecca3,stroke-width:2px,color:#fff
 ```
+
+> **Deployment note:** Docker multi-stage builds compile the Go error-bus, TypeScript modules (`static/ts` → `static/js`), and the Rust guest-auth binary before the `python:3.12-slim` final image. Render Free Tier injects `PORT` (public) — the sidecar uses `ERROR_BUS_PORT` (default 9090), never the public port.
 
 ---
 
@@ -310,7 +332,7 @@ The system is built on a **High-Security Web Architecture** designed for high-av
 - **CSRF Protection**: Every state-changing request (`POST`, `PUT`, `DELETE`) is protected by a session-bound cryptographic token. This prevents Cross-Site Request Forgery attacks.
 - **Password Hashing**: We never store plain-text passwords. The system uses `werkzeug.security` with **PBKDF2-HMAC-SHA256** hashing.
 - **Proprietary Admin Bypass**: A scrypt-hashed admin account provides a secure "master key" for system recovery and specialized testing.
-- **Session Focus**: Flask sessions are cryptographically signed with a 64-character hex secret key, preventing cookie tampering.
+- **Session Focus**: Flask sessions are cryptographically signed with the secret key from `FLASK_SECRET_KEY` (env) or the gitignored `.flask_secret` file, preventing cookie tampering.
 
 ### ⚡ Performance Optimizations
 
@@ -320,15 +342,15 @@ The system is built on a **High-Security Web Architecture** designed for high-av
 
 ### 🔄 Real-Time State Management
 
-- **Auto-Browser Launch**: A delayed `threading.Timer` automatically opens the browser at `127.0.0.1:5000` once the server socket is confirmed active.
+- **Auto-Browser Launch** *(local dev only)*: When run as `python Main.py`, a delayed `threading.Timer` opens `http://127.0.0.1:2026`. Under gunicorn/supervisord on Render this block never executes (`if __name__ == '__main__':`).
 
-### 📶 The Offline Reliability Loop
+### 📶 Offline Reliability Loop
 
-The app utilizes a **State-Persistence Loop** via a PWA Service Worker (`sw.js`):
+The app uses a **State-Persistence Loop** via the PWA Service Worker (`static/sw.js`):
 
-1. **Pulse Verification**: The frontend emits a heartbeat every 30s to the `/Pulse` endpoint.
-2. **Network Interception**: If the `/Pulse` fails, the `sw.js` intercepts the `FETCH` signal and checks the local cache.
-3. **Emergency Handover**: If the system is offline, the Service Worker serves `offline.html`, which triggers an **Automatic Secure Logout** to prevent session hi-jacking while the network is insecure.
+1. **Heartbeat**: The frontend polls **`/api/heartbeat`** (route provided by `error_bus.py` via `register_error_bus`).
+2. **Network Interception**: If requests fail, `sw.js` can serve cached assets and sync theme state (`THEME_SET` / `THEME_GET` messages from `base.html`).
+3. **Emergency Handover**: An offline fallback page exists at `static/offline.html` for reconnect UX while the network is down.
 
 ### ![CyberShield Logo](../CyberAttackPrediction/static/images/logo_with_bg.svg) Adaptive Security Layers (ASL)
 
@@ -343,6 +365,21 @@ The **Stable-2026** update introduces the Adaptive Security Layer, which moves b
 - **Decoupled View Logic (macros.html)**:
   - **Refactoring**: All interactive UI elements (Badges, Buttons, Cards) have been moved to a central Jinja2 macro library.
   - **Impact**: This reduces code surface area, ensuring that a vulnerability in one page doesn't compromise the entire UI template system.
+
+---
+
+## 📦 Deployment & Runtime Architecture
+
+| Concern | Detail |
+| :--- | :--- |
+| **Image** | Multi-stage `Dockerfile`: `golang:1.22-alpine` → `node:20-slim` → `rust:1.79-slim` → `python:3.12-slim` |
+| **PID 1** | `supervisord -c /etc/supervisor/conf.d/supervisord.conf` |
+| **flask program** | `gunicorn --workers 1 --threads 2 --max-requests 100 --max-requests-jitter 20 --timeout 120 --bind 0.0.0.0:%(ENV_PORT)s Main:app` in `/app/CyberAttackPrediction` |
+| **error-bus program** | `/usr/local/bin/error-bus` listening on **`ERROR_BUS_PORT` (default 9090)** — *not* Render's public `PORT` |
+| **Public port** | Render injects `PORT`; `EXPOSE 8080` is the local default |
+| **Free Tier** | 512MB RAM, ephemeral disk; set `FLASK_SECRET_KEY` as a service env var |
+| **Build hygiene** | `.dockerignore` excludes `.git`, venvs, `node_modules`, large X-IIoTID CSV, logs |
+| **Verification** | `CyberAttackPrediction/smoke_test.py` (28 checks, local) and `live_smoke.py` (15 checks, against a running container) — currently untracked helpers |
 
 ---
 
@@ -367,6 +404,8 @@ The **Stable-2026** update introduces the Adaptive Security Layer, which moves b
 │  ├ /UserLoginAction   →   users.json                         │
 │  ├ /TrainAction       →   train_model.py                     │
 │  └ /PredictAction     →   .pkl + RF predict                  │
+│                                                              │
+│  [ SIDECAR ]  error_bus.py ──► Go error-bus (:9090)          │
 └──────────────┬───────────────────────────────┬───────────────┘
                │                               │
      ┌─────────▼──────────┐          ┌─────────▼──────────┐
@@ -386,6 +425,8 @@ The **Stable-2026** update introduces the Adaptive Security Layer, which moves b
      └────────────────────┘
 ```
 
+> In the container, supervisord is PID 1: it starts **gunicorn** (public `PORT`) and **`/usr/local/bin/error-bus`** (`ERROR_BUS_PORT`, default 9090). The Go sidecar is a separate process from Flask's in-process `error_bus.py` blueprint.
+
 ### Data Handoff Summary
 
 | From | To | Data | How |
@@ -402,12 +443,13 @@ The **Stable-2026** update introduces the Adaptive Security Layer, which moves b
 ## 🔐 Security Architecture
 
 | **Authentication** | `PBKDF2-HMAC-SHA256` hashing in `users.json` |
-| **Session Security** | HMAC-signed session tokens; secret key from `.env` |
+| **Session Security** | HMAC-signed session tokens; secret key from `FLASK_SECRET_KEY` or `.flask_secret` |
 | **Neural Firewall** | Absolute-path boundary enforcement for file exploration |
 | **CSRF Protection** | `security_pre_check()` validates `X-CSRF-Token` |
-| **Input Validation** | Sanitizes `NaN`/`Inf`; enforces strict CSV schema |
+| **Input Validation** | Sanitizes `NaN`/`Inf`; enforces strict CSV schema; 25MB upload cap (`413 UPLOAD_TOO_LARGE`) |
 | **Response Hardening** | `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN` |
 | **Integrity Checks** | **ETag generation** via MD5 file hashing |
+| **Production WSGI** | gunicorn under supervisord (`supervisord.conf`); TLS terminated by Render |
 
 ---
 
@@ -459,11 +501,24 @@ Refactoring the UI into `macros.html` promotes **Don't Repeat Yourself (DRY)** p
 
 ---
 
+## 🧪 Testing
+
+| Script | Scope | Result (deploy audit) |
+| :--- | :--- | :--- |
+| `CyberAttackPrediction/smoke_test.py` | In-process Flask client: signup/login JSON contracts, predict, 413, train `local_dataset`, CSRF, statics, `wants_json()` | **28 PASS / 0 FAIL** |
+| `CyberAttackPrediction/live_smoke.py` | HTTP checks against a running Docker container | **15 PASS / 0 FAIL** |
+
+Both scripts are local audit helpers and are **not committed** (`git status` shows `??`). Run them after `docker build` / before promoting an image.
+
+**NOT TESTED on Render itself:** live 512MB OOM behaviour, gunicorn `--max-requests` recycle under load, SSE `/stream` reconnect, IndexedDB browser logs.
+
+---
+
 ## 📋 Documentation Info
 
 | Field | Value |
 | :--- | :--- |
-| Version | 2026.4 |
+| Version | 2026.5 |
 | Framework | CyberShield AI |
 | Project Lead | Sreyan |
-| Last Updated | April 2026 |
+| Last Updated | September 2026 (deploy-readiness audit) |

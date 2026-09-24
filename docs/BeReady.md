@@ -147,18 +147,24 @@ Upon completing self-study of this project, the student will be able to:
 
 ### Unit IV — Core Topics
 
-- The complete route map of the Flask application:
+- The complete route map of the Flask application (key routes; `Main.py` registers ~35 plus routes added by `error_bus.py`):
 
 | Route | Method | What It Does |
 | --- | --- | --- |
-| `/` | GET | Redirects to login |
-| `/UserLogin` | GET, POST | Login form and credential check |
-| `/Home` | GET | Dashboard (session protected) |
-| `/Predict` | GET | CSV upload form |
+| `/`, `/index` | GET | Landing / redirects toward login |
+| `/UserLogin` | GET, POST | Login form |
+| `/UserLoginAction` | POST | Credential check (form or JSON) → `{ok, data.redirect}` |
+| `/Signup`, `/SignupAction` | GET / POST | Registration (JSON body or form) |
+| `/GuestLogin` | POST | Guest session |
+| `/Predict`, `/PredictView` | GET | CSV upload / results view |
 | `/PredictAction` | POST | Runs model prediction |
-| `/Train` | GET, POST | Triggers model retraining |
-| `/TrainStatus` | GET | Returns training progress (AJAX polling) |
-| `/Logout` | GET | Clears session, redirects to login |
+| `/Train` | GET | Training page + local dataset list |
+| `/TrainAction` | POST | Starts training (`training_data` file or `local_dataset`) |
+| `/Logout` | **POST** | Clears session, redirects to login |
+| `/Account` | GET | Account settings |
+| `/api/clear-session` | POST | Clears prediction session keys |
+| `/api/heartbeat` | GET, POST | Health/pulse (registered by `error_bus.py`) |
+| `/api/logs` | GET | Recent error-bus events (registered by `error_bus.py`) |
 
 - How session protection works in every route:
 
@@ -167,20 +173,19 @@ Upon completing self-study of this project, the student will be able to:
       return redirect('/UserLogin')
   ```
 
-- How credentials are kept secure: `.env` file + `load_dotenv()` + `os.getenv()`.
+- How credentials are kept secure: hashed passwords in `users.json` (PBKDF2 via Werkzeug); optional `.env` + `load_dotenv()` for admin bootstrap. Session secret = `FLASK_SECRET_KEY` env **or** gitignored `.flask_secret`.
 - Why the model is loaded once at startup (`load_ml_model()`) and not per request.
 - The full prediction flow in `PredictAction()`:
+  - Enforce 25MB cap → `413 UPLOAD_TOO_LARGE` for oversized bodies
   - Read uploaded data into Pandas DataFrame
   - Rename and encode columns using the same `LabelEncoder` logic
   - Apply saved `StandardScaler.transform()`
   - Call `model.predict()` to get integer predictions
   - Decode integers back: `labels_list[pred]`
   - Look up GenAI insight from the dictionary
-  - Pass results to `result.html` via `render_template()`
-- Why training runs in a background `threading.Thread`: Flask is single-threaded;
-  blocking it would freeze the entire UI during training.
-- The `Timer(1.5, open_browser).start()` pattern: opens browser 1.5s after Flask
-  starts to give the server time to bind the port.
+  - Pass results to the result template via `render_template()` (or JSON if `wants_json()`)
+- Why training runs in a background `threading.Thread`: Flask/gunicorn would otherwise block worker threads for the whole fit.
+- The `Timer(1.5, open_browser).start()` pattern: **local dev only** (`if __name__ == '__main__'`). Under gunicorn/supervisord on Render it never runs.
 
 ### Unit IV — Viva Questions
 
@@ -268,6 +273,8 @@ Upon completing self-study of this project, the student will be able to:
 - [ ] I can trace a data upload from browser click to prediction on screen.
 - [ ] I can explain how session management protects routes.
 - [ ] I know why training runs in a background thread.
+- [ ] I can state the login JSON contract (`{ok, data.redirect}`) and the 413/`UPLOAD_TOO_LARGE` behaviour.
+- [ ] I know the production process model: supervisord → gunicorn (`$PORT`) + error-bus (`ERROR_BUS_PORT=9090`).
 
 ### Unit V and VI — GenAI and Design
 
@@ -308,12 +315,13 @@ Upon completing self-study of this project, the student will be able to:
 **Purpose:** Flask web application — routing, session management, prediction, training trigger.
 
 - Focus on: `load_ml_model()` — loaded once at startup, stored in global variable
-- Focus on: `PredictAction()` — the full predict pipeline (encode → scale → predict → decode → insight)
+- Focus on: `PredictAction()` — the full predict pipeline (encode → scale → predict → decode → insight) plus 25MB/`413 UPLOAD_TOO_LARGE` handling
+- Focus on: `wants_json()` — switches responses between JSON envelopes and HTML redirects
 - Focus on: `@app.route` decorators, `session['user']` checks on every protected route
 - Focus on: `threading.Thread(target=run_training).start()` — async training pattern
-- Focus on: `load_dotenv()` at top, `os.getenv('ADMIN_USER')` for secure credential reading
-- Focus on: `Timer(1.5, open_browser).start()` — why 1.5 seconds
-- Covers: Unit IV topics — all Flask routes, session, env vars, async training
+- Focus on: Session secret — `FLASK_SECRET_KEY` env or persistent `.flask_secret` file
+- Focus on: `Timer(1.5, open_browser).start()` — local-only auto-launch (not used under gunicorn)
+- Covers: Unit IV topics — all Flask routes, session, env vars, async training, API contracts
 
 ---
 
@@ -354,13 +362,15 @@ Upon completing self-study of this project, the student will be able to:
 
 ---
 
-### `.env`
+### `.env` (and `.flask_secret`)
 
 **Purpose:** Stores sensitive credentials outside the codebase.
 
-- Contains: `FLASK_SECRET_KEY`, `ADMIN_USER`, `ADMIN_PASS`
-- Key rule: Never commit this file to Git — it is listed in `.gitignore`
-- Loaded by: `load_dotenv()` at the top of `Main.py`
+- Contains (optional): `FLASK_SECRET_KEY`, `ADMIN_USER`, `ADMIN_PASS`
+- Session secret: if `FLASK_SECRET_KEY` is unset, `Main.py` uses/creates gitignored `.flask_secret`
+- Key rule: Never commit `.env` or `.flask_secret` — both are listed in `.gitignore`
+- Loaded by: `load_dotenv()` at the top of `Main.py` (when the file exists)
+- On Render: set `FLASK_SECRET_KEY` as a service env var (ephemeral disk wipes files)
 - Covers: Unit IV — environment variable security, session key configuration
 
 ---
@@ -381,9 +391,9 @@ Upon completing self-study of this project, the student will be able to:
 **Purpose:** Project homepage, installation guide, and key feature showcase.
 
 - Focus on: **Key Features** list — ready to orally describe the "Liquid Glass UI" and "Explainable AI".
-- Focus on: **Project Architecture** summary for a quick high-level overview.
-- Focus on: **Prerequisites** and **Installation** steps in case you're asked how to set it up from scratch.
-- Covers: Unit IV and VI — Web UI features and overall project design.
+- Focus on: **Deployment (Docker / Render)** section for the production process model.
+- Focus on: **Installation & Setup** and **API Contracts** in case you're asked how to set it up or how the frontend talks to Flask.
+- Covers: Unit IV and VI — Web UI features, deployment, and overall project design.
 
 ---
 

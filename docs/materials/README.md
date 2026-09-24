@@ -11,7 +11,7 @@ To ensure everyone is working in the exact same environment without conflicts, p
 
 ### 1. Prerequisites
 
-- **Python 3.10+**
+- **Python 3.13** (local dev; the Docker/Render image uses Python 3.12-slim)
 - **Git**
 
 ### 2. Getting the Code
@@ -47,23 +47,28 @@ You must **never** push your virtual environment to Git. We have already added i
 1. **Create the environment:**
 
    ```bash
-   python -m venv venv
+   python -m venv .venv
    ```
 
 2. **Activate it:**
-   - **Windows:** `venv\Scripts\activate`
-   - **Mac/Linux:** `source venv/bin/activate`
+   - **Windows:** `.venv\Scripts\activate`
+   - **Mac/Linux:** `source .venv/bin/activate`
 
 3. **Install the exact team dependencies:**
 
    ```bash
-   pip install -r requirements.txt
+   # Runtime / web app
+   pip install -r CyberAttackPrediction/requirements.txt
+   # Notebooks & SHAP (optional, local research only)
+   pip install -r CyberAttackPrediction/requirements-dev.txt
    ```
+
+   There is no root-level `requirements.txt`.
 
 ### 4. Handling Datasets (NSL-KDD / CIC-IDS)
 
-**DO NOT COMMIT DATASETS TO GIT.** They are too large and will break your repository.
+Datasets live in **`CyberAttackPrediction/Dataset/`** (not a `data/` folder).
 
-1. Download the datasets manually.
-2. Place them inside the `data/` folder on your own laptop.
-3. The `data/` folder is intentionally ignored by `.gitignore`, so your datasets stay safely on your local machine.
+- Most committed CSVs **are tracked** in git so the Render container can train on its ephemeral disk.
+- Runtime uploads stay local/ignored: `uploaded_*.csv`, `custom_train.csv`, `X-IIoTID dataset.csv`, and `static/Dataset/*.csv` (see `.gitignore`).
+- If you need a huge research CSV that is intentionally ignored, drop it in `CyberAttackPrediction/Dataset/` under an ignored name — do not invent a separate `data/` folder.

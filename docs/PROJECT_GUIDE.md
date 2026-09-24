@@ -124,8 +124,8 @@ The internet is like a massive highway. Millions of pieces of information travel
 
 Our system is built to survive in hostile network environments.
 
-- **Service Worker**: A script that runs in the background. If your internet dies, it intercepts the request and serves a beautiful "System Offline" page.
-- **Pulse Detection**: The system constantly checks for a "Heartbeat." If the connection is lost, it automatically logs the user out and renders the offline interface to prevent data tampering.
+- **Service Worker**: `static/sw.js` is registered from `base.html`. It caches critical assets and handles theme sync messages from the page.
+- **Pulse Detection**: The page polls `/api/heartbeat` (registered by `error_bus.py`) and reacts to connectivity loss. An offline fallback page exists at `static/offline.html`.
 
 ---
 
@@ -151,13 +151,19 @@ A software application that monitors a network or systems for malicious activity
 ### 🏗️ The Backend (The "Engine Room")
 
 - **Language**: Python.
-- **Framework**: Flask.
+- **Framework**: Flask, served in production by **gunicorn** (1 worker / 2 threads) under **supervisord**.
 - **Role**: It does the heavy lifting. It calculates the math, loads the AI models, and talks to the data files. It's the "Brain" that decides if a user is a hacker.
 
 ### 🎨 The Frontend (The "Face")
 
-- **Language**: HTML, CSS (Bootstrap 5).
+- **Language**: HTML, CSS (Bootstrap 5), TypeScript (`static/ts/` → compiled `static/js/` in Docker).
 - **Role**: It's what the user sees. The buttons, the tables, and the colors. It makes complex AI data look beautiful and easy to understand.
+
+### 🐳 The Deployment Layer
+
+- **Multi-stage Dockerfile**: builds a Go **error-bus** sidecar, TypeScript modules, and a Rust guest-auth binary, then packages everything on `python:3.12-slim`.
+- **supervisord**: runs `gunicorn --bind 0.0.0.0:$PORT Main:app` plus `/usr/local/bin/error-bus` on **`ERROR_BUS_PORT` (default 9090)** — the sidecar never binds Render's public `PORT`.
+- **Target**: Render Free Tier (512MB RAM, ephemeral disk, injects `PORT` / `RENDER=true`). Session secret comes from `FLASK_SECRET_KEY` or a gitignored `.flask_secret` file.
 
 ---
 
@@ -199,10 +205,24 @@ We take three different AI models (MLP, KNN, Random Forest) and let them all gue
 - **Role**: The "Laboratory Launcher."
 - **Detailed Logic**: This activates the environment and immediately launches Jupyter Lab. It allows the research team to interact with the notebooks without manually typing terminal commands.
 
-#### 4. `.gitignore` (Configuration)
+#### 4–6. Deployment files (repo root)
+
+| File | Role |
+| --- | --- |
+| `Dockerfile` | Multi-stage image: Go error-bus, TS modules, Rust guest auth → `python:3.12-slim` + supervisord |
+| `supervisord.conf` | `flask` = gunicorn on `$PORT`; `error-bus` on `ERROR_BUS_PORT` (9090) |
+| `.dockerignore` | Excludes `.git`, venvs, node_modules, large CSVs from `docker build` context |
+
+#### 7. `.gitignore` (Configuration)
 
 - **Role**: The "Filter."
-- **Details**: When using Git (GitHub), we don't want to upload 1GB of data or our passwords. This file tells Git to ignore the datasets, passwords, and the bulky Python folder.
+- **Details**: Tracks what Render and the Docker build need (error-bus sources, `Cargo.lock`, `static/ts/` sources, most `Dataset/` CSVs) and ignores what must not be committed (`.env`, `.flask_secret`, `users.json`, `static/js/` build output, `node_modules/`, compiled `error-bus` binaries, `rust_auth/target/`, runtime `uploaded_*.csv` / `custom_train.csv`).
+
+#### 5. `Dockerfile` / `supervisord.conf` / `.dockerignore` (Deployment)
+
+- **Dockerfile**: Multi-stage build — Go error-bus, TypeScript modules, Rust guest auth, then `python:3.12-slim` final image. `CMD` is `supervisord`.
+- **supervisord.conf**: `flask` program = gunicorn bound to `$PORT`; `error-bus` program = `/usr/local/bin/error-bus` on `ERROR_BUS_PORT` (9090). Logs go to stdout/stderr (`/dev/null` for supervisord itself).
+- **.dockerignore**: Keeps `.git`, venvs, `node_modules`, large X-IIoTID CSV, and logs out of the build context.
 
 ---
 
@@ -210,12 +230,16 @@ We take three different AI models (MLP, KNN, Random Forest) and let them all gue
 
 #### 1. `sw.js` (Service Worker)
 
-- **Role**: The Network Interceptor.
-- **Logic**: It caches critical pages (like `offline.html`). When the browser detects it's offline, the Service Worker "steps in" and serves the cached page instead of showing a "No Internet" dinosaur.
+- **Role**: The Network Interceptor / theme-sync helper.
+- **Logic**: Registered from `base.html`. Caches critical assets and receives `THEME_SET` / `THEME_GET` messages. An offline fallback lives at `offline.html`.
 
 #### 2. `offline.html` (The Emergency Deck)
 
-- **Role**: A beautiful, branded landing page that explains the network status and provides an "Automatic Reconnect" timer.
+- **Role**: A branded landing page for network-status / reconnect UX when the service worker serves the offline path.
+
+#### 3. `ts/` → `js/` (TypeScript build)
+
+- **Role**: Source lives in `static/ts/` (`api.ts`, `notification.ts`, `types.ts`). Docker's `ts-builder` stage compiles to `static/js/`, which is **gitignored** — always build via Docker (or `npm run build` in `static/ts/`) rather than committing `js/`.
 
 ---
 
@@ -490,7 +514,7 @@ See the Algorithmic Comparison and XAI sections above for full details on how th
 4. **Q: How do you handle new attacks not in the training data?**
    - *A*: The model will likely classify them as the closest known attack type because their behavior (e.g., high count, wrong fragments) will differ significantly from "Normal" traffic.
 5. **Q: What is the significance of `requirements.txt`?**
-   - *A*: It lists every external library (Flask, Scikit-learn, Pandas) and its version. It allows another developer to recreate your entire environment with one command: `pip install -r requirements.txt`.
+   - *A*: It lists every external library (Flask, Scikit-learn, Pandas, gunicorn, requests) and its version. Runtime deps live in `CyberAttackPrediction/requirements.txt` (used by Docker/Render); notebook-only packages (Jupyter, SHAP, matplotlib) live in `requirements-dev.txt`. Recreate the environment with `pip install -r CyberAttackPrediction/requirements.txt`.
 6. **Q: What is `pickle` used for in this project?**
    - *A*: `pickle` serializes the trained model to a `.pkl` file so we don't retrain it every time the server restarts. The `load_ml_model()` function deserializes it back into memory.
 7. **Q: Why do we load the model on startup instead of loading it per request?**
@@ -586,6 +610,10 @@ See the Algorithmic Comparison and XAI sections above for full details on how th
 
 ### 🐍 Category F: Python & Flask
 
+- **Q: What is `wants_json()` used for in `Main.py`?**
+  - *A*: Decides whether a response should be a JSON envelope or an HTML redirect. True when the client sends `Accept: application/json` (or is on an exempt AJAX path such as `/UserLoginAction`, `/SignupAction`, `/api/heartbeat`).
+- **Q: What happens on a 25MB+ upload?**
+  - *A*: Flask raises `RequestEntityTooLarge`; `handle_413` returns JSON `{ok:false, code:"UPLOAD_TOO_LARGE"}` for API clients or a friendly HTML page for browsers. Training files are also capped at 5000 rows.
 - **Q: What is the role of `os.path.dirname(os.path.abspath(__file__))`?**
   - *A*: Gets the absolute path of the directory containing the running script so paths like Dataset/ and model/ work regardless of where the code is run from.
 - **Q: What is `jsonify()` in Flask?**
@@ -597,7 +625,7 @@ See the Algorithmic Comparison and XAI sections above for full details on how th
 - **Q: Why do we check `if 'user' not in session` at the start of protected routes?**
   - *A*: To prevent unauthorized access. If a user visits `/Predict` without logging in, they are redirected to the login page.
 - **Q: What is the purpose of the `Timer` class in `Main.py`?**
-  - *A*: `Timer(1.5, open_browser).start()` opens the web browser 1.5 seconds after Flask starts, so the user doesn't have to manually type the URL.
+  - *A*: `Timer(1.5, open_browser).start()` opens the web browser 1.5 seconds after Flask starts **in local `python Main.py` / launcher mode only**. It never runs under gunicorn/supervisord on Render (that code is inside `if __name__ == '__main__':`).
 - **Q: What is `load_dotenv()` for?**
   - *A*: Reads the `.env` file and loads its key-value pairs as environment variables, making sensitive values available via `os.getenv()` without hardcoding them.
 - **Q: What is `request.form.get('t1')` doing?**
@@ -694,7 +722,7 @@ See the Algorithmic Comparison and XAI sections above for full details on how th
 - **Q: How could you improve the model's accuracy further?**
   - *A*: Apply GridSearchCV for hyperparameter tuning, use SMOTE to balance class distribution, add feature selection to remove noisy features, and train on larger datasets.
 - **Q: What would a real-world deployment of this system look like?**
-  - *A*: Deployed on a cloud server (AWS/GCP), connected to live network traffic via Wireshark or Zeek, with real-time prediction and alerting dashboards.
+  - *A*: Already deployed as a Docker image on **Render** (Free Tier) with gunicorn under supervisord and a Go error-bus sidecar. Next steps: attach live traffic (Wireshark/Zeek), real-time alerting, and horizontal scale on a paid plan.
 - **Q: How would you add a real Generative AI to the insights?**
   - *A*: Integrate the Google Gemini API or GPT-4 API. When an attack is detected, pass the type and features to the LLM asking it to explain and suggest 3 mitigations.
 - **Q: What is the limitation of training on only 20,000 rows?**
@@ -826,6 +854,7 @@ See the Algorithmic Comparison and XAI sections above for full details on how th
 
 - **Cause**: A previous Flask process is still running in the background.
 - **Solution (Windows)**: Run `taskkill /f /im python.exe` in a terminal. Alternatively, change the port at the bottom of `Main.py`: `app.run(port=2027)`.
+- **On Render/Docker**: The public port is whatever the platform injects as `PORT` (do not hardcode 2026 — that is the local dev port only). The error-bus sidecar uses `ERROR_BUS_PORT` (default 9090).
 
 ---
 
@@ -881,7 +910,7 @@ See the Algorithmic Comparison and XAI sections above for full details on how th
 ### ❌ Error: Training the model in the web app freezes the browser tab
 
 - **Cause**: `train_model.py` is a blocking synchronous call. Flask's default server is single-threaded, so it blocks all requests while training runs.
-- **Solution**: The project uses a background `threading.Thread` to run training asynchronously. Ensure the `/Train` route launches training in a thread and uses the `/TrainStatus` polling endpoint to report progress to the frontend without blocking.
+- **Solution**: The project uses a background `threading.Thread` to run training asynchronously. The `/Train` route launches training in a thread; the frontend polls progress (AJAX against the training status/log endpoints — not a separate `/TrainStatus` route) so the UI stays responsive.
 
 ---
 
@@ -894,8 +923,8 @@ See the Algorithmic Comparison and XAI sections above for full details on how th
 
 ### ❌ Error: Login succeeds but user is immediately redirected back to login
 
-- **Cause**: `session['user']` is being set but not persisting across redirects — usually because `app.secret_key` is not set.
-- **Solution**: Ensure `app.secret_key = os.getenv('FLASK_SECRET_KEY')` is present in `Main.py` and `.env` contains `FLASK_SECRET_KEY=some_random_long_string`.
+- **Cause**: `session['user']` is being set but not persisting across redirects — usually because `app.secret_key` is unstable or missing.
+- **Solution**: `Main.py` uses `FLASK_SECRET_KEY` from the environment when set; otherwise it reads/writes a gitignored `.flask_secret` file next to `Main.py`. Ensure one of those is stable across worker recycles (gunicorn `--max-requests` restarts workers; a random key per boot would invalidate sessions). On Render, set `FLASK_SECRET_KEY` as a service env var because the disk is ephemeral.
 
 ---
 
@@ -957,7 +986,7 @@ See the Algorithmic Comparison and XAI sections above for full details on how th
   - **`X-Content-Type-Options: nosniff`**: Prevents the browser from "guessing" file types (security risk).
   - **`Cache-Control: no-store`**: Ensures that sensitive prediction data is never stored in the browser's temporary files.
 - **CSRF Protection**: Every single form submission (POST) requires a unique, one-time "Security Token" (CSRF Token). Even if a hacker tricks a user into clicking a link, they cannot submit the form without this secret token.
-- **Use HTTPS in production**: Flask's built-in server is for development only. Use Gunicorn + Nginx with an SSL certificate for real deployments.
+- **Use HTTPS in production**: Locally, Flask's built-in server is for development only. In the container we run **gunicorn under supervisord** (no Nginx in-image); TLS/HTTPS is terminated by **Render** in front of the container.
 - **Log predictions responsibly**: Network traffic data can be sensitive personal information. Log only metadata (attack type, timestamp) rather than raw packet data.
 - **Audit AI decisions**: Always have a human review AI-flagged attacks before taking automated blocking actions.
 
@@ -970,8 +999,8 @@ See the Algorithmic Comparison and XAI sections above for full details on how th
 - **Live Packet Capture**: Integrate with `pyshark` or `scapy` to analyze real-time network traffic instead of file uploads.
 - **Dashboard Analytics**: Add a prediction history dashboard showing attack frequency over time using `Chart.js`.
 - **Model Versioning**: Use `MLflow` to track model versions, accuracy metrics, and hyperparameters across training runs.
-- **Multi-User Support**: Add a user management system with role-based access control (Admin vs. Analyst roles).
-- **API Endpoint**: Add a `/api/predict` JSON endpoint so other systems can programmatically request predictions.
+- **Multi-User Support**: Add a user management system with role-based access control (Admin vs. Analyst roles). *(Partially done: multi-user `users.json`, signup, account settings.)*
+- **API Endpoint**: JSON envelopes already work on existing routes when the client sends `Accept: application/json` (`wants_json()`). A dedicated `/api/predict` wrapper and OpenAPI docs would be the next step.
 
 ---
 

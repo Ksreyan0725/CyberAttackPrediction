@@ -96,7 +96,7 @@ This script is redesigned for **Maximum Safety**. It ensures that everyone has c
 
 #### Slide 15: Conclusion & Future Scope
 
-"Thank you, Kumar. In short, we have built a smart security system that is fast, accurate, and easy to talk to. In the future, we hope to move this to the Cloud to protect users all over the world."
+"Thank you, Kumar. In short, we have built a smart security system that is fast, accurate, and easy to talk to. It already runs in the cloud on Render; next we want to scale it to protect users all over the world."
 
 #### Slide 16: Final Questions
 

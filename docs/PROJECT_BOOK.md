@@ -1,6 +1,6 @@
 # ![CyberShield Logo](../CyberAttackPrediction/static/images/logo_with_bg.svg) Comprehensive Guide: Cyber Attack Prediction Analysis
 
-**Status**: 🟢 **Hardened 2026 Technology Stack** (Flask 3.1.3, Pandas 3.0.2, Scikit-Learn 1.8.0, Python 3.13)
+**Status**: 🟢 **Hardened 2026 Technology Stack** (Flask 3.1.3, Pandas 3.0.2, Scikit-Learn 1.8.0; local Python 3.13.x, Docker/Render runtime **Python 3.12-slim**)
 
 This document serves as the "Project Book," consolidating the technical logic, results, and interpretation for both **Extension** and **Propose** analysis notebooks.
 
@@ -19,18 +19,30 @@ The project is organized into a modular structure to separate data analysis (Jup
 ### Core Directory Map
 
 - **`/` (Root)**:
-  - `Main.py`: The heart of the application. Handles Flask routing, session logic, and real-time inference.
-  - `train_model.py`: Utility script to re-train the Random Forest model and generate the high-performance `.joblib` artifact.
+  - `Dockerfile`: Multi-stage production image (Go error-bus + TS modules + Rust guest auth → Python 3.12-slim).
+  - `supervisord.conf`: Runs gunicorn (`$PORT`) and the error-bus sidecar (`ERROR_BUS_PORT=9090`).
+  - `.dockerignore`: Keeps `.git`, venvs, node_modules, and large CSVs out of the build context.
+  - `launcher.py`: Unified local command center.
 
-  - `users.json`: Persistent user database (Salted/Hashed).
-  - `requirements.txt`: Python dependency manifest.
-  - `.env`: Environment configuration (API keys, Secret keys).
-  
+- **`CyberAttackPrediction/`**:
+  - `Main.py`: The heart of the application. Handles Flask routing, session logic, and real-time inference.
+  - `error_bus.py`: In-process event bus; registers `/api/heartbeat` and `/api/logs`.
+  - `error-bus/`: Go sidecar source (`go.mod`, `main.go`; binary gitignored).
+  - `rust_auth/`: Rust guest-auth crate (`Cargo.lock` tracked for Docker).
+  - `static/ts/`: TypeScript sources compiled to gitignored `static/js/` in Docker.
+  - `train_model.py`: Utility script to re-train the Random Forest model and generate the `.pkl` artifact.
+  - `users.json`: Persistent user database (Salted/Hashed) — **gitignored**.
+  - `requirements.txt`: Runtime dependency manifest (Docker/Render; includes `gunicorn`, `requests`).
+  - `requirements-dev.txt`: Notebook/SHAP stack (local only).
+  - `.env` / `.flask_secret`: Environment configuration and persistent session secret (both gitignored).
+
 - **`/docs`**:
   - `PROJECT_BOOK.md`: Technical documentation and project guide (The file you are reading).
   - `PROJECT_GUIDE.md`: Comprehensive reference with viva Q&A and technical deep-dives.
-  - `TECHNICAL_WORKFLOW.md`: Detailed system logic and architecture map.
+  - `TECHNICAL_WORKFLOW.md`: Detailed system logic, architecture map, and deployment topology.
+  - `GUIDE_BOOK.md`: Setup, datasets, and run instructions.
   - `BeReady.md`: Student handbook and self-study guide.
+  - Plus walkthroughs: `DATASET_AUDIT.md`, `Python Upgrade Walkthrough.md`, `UI_Refinement_Walkthrough.md`, `TEAM_PRESENTATION_SCRIPT.md`, `materials/`, `reports/FINAL_REPORT.md`.
 
 - **`/model`**:
   - `trained_rf_model.pkl`: Serialized model artifact (includes Scaler and Encoders).
@@ -339,7 +351,7 @@ To ensure production-grade security, the application transitioned from a hardcod
     - **Mechanism**: The login portal uses a zero-reload `fetch()` architecture.
     - **Experience**: Failed attempts trigger a "Glass Toast" error instantly without interrupting UI animations or background effects.
     - **Granular Auditing**: The system separates `invalid_username` and `invalid_password` error codes, allowing for precise identity conflict resolution.
-    - **Security**: Validated via a JSON response from the server, which includes a secure redirect token for the project workflow.
+    - **Security**: Validated via a JSON response from the server: `{ ok: true, data: { redirect: "..." } }` on success, or `{ ok: false, code: "INVALID_USERNAME" | "INVALID_PASSWORD" | ... }` on failure (clients may also read `data.redirect` / top-level `redirect`). Signup (`/SignupAction`) accepts a JSON body or form data.
 2. **Password Hashing (Werkzeug Security)**:
     - **Mechanism**: Passwords are never stored in plain text. Instead, we use `generate_password_hash` with the **pbkdf2:sha256** and **scrypt** methods.
     - **Security**: This prevents attackers from reading passwords even if they gain access to the `users.json` database.
@@ -355,7 +367,7 @@ To ensure production-grade security, the application transitioned from a hardcod
     - **Purpose**: Provides a master "overrule" account that bypasses standard database checks.
     - **Visual Indicator**: When logged in as the ultimate admin, a **MASTER** badge appears in the navigation bar.
 6. **Session Management**:
-    - Uses Flask's encrypted signed cookies (`secret_key`).
+    - Uses Flask's encrypted signed cookies (`secret_key` from `FLASK_SECRET_KEY` env or gitignored `.flask_secret`).
     - Includes inactivity protection and secure logout mechanisms.
     - **Inactivity Timeout**: Set to 1 hour of idle time.
 7. **Local "Quick Access" Storage**:
@@ -457,6 +469,9 @@ To ensure "One-Click" reliability for examiners, the project includes an automat
     - **Reliability**: If the `venv` is missing or corrupted, the script automatically triggers a rebuild from `requirements.txt`, ensuring a zero-failure presentation environment.
 3. **Persistent Shell Architecture**:
     - Uses `pushd` and `cmd /k` triggers to keep terminal windows active for real-time monitoring post-launch, preventing accidental "silent crashes."
+4. **Production Equivalent (Docker / Render)**:
+    - Instead of `launcher.py`, the container's PID 1 is **supervisord**, which starts **gunicorn** (bound to Render's `$PORT`) and the **Go error-bus** sidecar on `ERROR_BUS_PORT` (9090).
+    - Local `.bat` launchers remain for viva demos on port `127.0.0.1:2026`.
 
 ---
 

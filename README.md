@@ -41,10 +41,10 @@ Experience the live deployed model running on Render.
 
 ## 🚀 Academic Quick Launch (Examiner Ready)
 
-This project includes all necessary software. Follow these **3 simple steps** to launch the application for your viva:
+This project includes all necessary software. Follow these **5 steps** to launch the application for your viva:
 
-1. **Install Python**: Open `python-3.13.12-amd64.exe` (must be installed manually or retrieved from python.org).
-2. **Configure Secrets**: Create a `.env` file in the root directory (use `.env.example` as a template) to secure your admin credentials and Flask session keys.
+1. **Install Python**: Open `python-3.13.12-amd64.exe` (must be installed manually or retrieved from python.org). Local dev uses Python 3.13.x; the Docker/Render container runs Python 3.12-slim.
+2. **Configure Secrets**: Create a `.env` file in the project root (there is no `.env.example` — use the template in [Installation & Setup](#️-installation--setup) below). Alternatively, omit `FLASK_SECRET_KEY` and let the app auto-generate a gitignored `.flask_secret` file.
 3. **Setup Dependencies**: Run `scripts/install_deps.ps1` to automatically prepare the high-performance environment.
 4. **Unified Launch**: Run `scripts/start_launcher.bat` (or `launcher.py`) to access the **Command Center**. Choose **Mode 1** for the Web Dashboard or **Mode 2** for Jupyter research.
 5. **Active Session Guard**: Start scripts now feature **Venv Persistence**, ensuring the `.venv` environment remains active and isolated for high-performance operation.
@@ -83,21 +83,25 @@ git clone https://github.com/Ksreyan0725/CyberAttackPrediction---College_Project
 cd CyberAttackPrediction---College_Project
 ```
 
-1. **Setup Virtual Environment**:
+2. **Setup Virtual Environment**:
 
 ```bash
 python -m venv .venv
 .\.venv\Scripts\activate
 ```
 
-1. **Install Dependencies**:
+3. **Install Dependencies**:
 
 ```bash
+# Runtime / web app (also used by Docker)
 pip install -r CyberAttackPrediction/requirements.txt
+
+# Notebook / research stack (SHAP, matplotlib, Jupyter) — optional, local only
+pip install -r CyberAttackPrediction/requirements-dev.txt
 ```
 
-1. **Configure Environment**:
-   Create a `.env` file in the root based on the following template:
+4. **Configure Environment** (optional for local runs):
+   Create a `.env` file in the project root. There is **no** `.env.example` in the repo:
 
 ```env
 FLASK_SECRET_KEY=your_secure_hex_key
@@ -106,22 +110,71 @@ ADMIN_PASS=admin
 ADMIN_HASH=pbkdf2:sha256:600000$...
 ```
 
-1. **Run the Application**:
+   If `FLASK_SECRET_KEY` is unset, `Main.py` auto-generates a persistent
+   `CyberAttackPrediction/.flask_secret` (gitignored). On Render’s **ephemeral
+   disk** that file is wiped on every redeploy — set `FLASK_SECRET_KEY` as a
+   service environment variable in the dashboard so sessions stay stable.
+
+5. **Run the Application** (local):
    Launch via `Start_WebApp_Venv.bat` or `python CyberAttackPrediction/Main.py`.
+   The local dev server listens on `http://127.0.0.1:2026/`.
+
+## 🐳 Deployment (Docker / Render Free Tier)
+
+The production image is a **multi-stage Dockerfile** at the repo root:
+
+| Stage | Base image | Builds |
+| --- | --- | --- |
+| `go-builder` | `golang:1.22-alpine` | Go error-bus sidecar → `/usr/local/bin/error-bus` |
+| `ts-builder` | `node:20-slim` | `static/ts/*.ts` → `static/js/` |
+| `rust-builder` | `rust:1.79-slim` | Rust guest-auth binary |
+| final | `python:3.12-slim` | App + supervisord + gunicorn |
+
+**Process model** (`supervisord.conf`):
+
+- **flask**: `gunicorn --workers 1 --threads 2 --max-requests 100 --bind 0.0.0.0:${PORT} Main:app`
+- **error-bus**: `/usr/local/bin/error-bus` on **`ERROR_BUS_PORT` (default `9090`)** — *not* Render’s public `PORT`
+
+```bash
+docker build -t cybershield .
+docker run -p 8080:8080 -e PORT=8080 -e RENDER=true cybershield
+```
+
+**Render Free Tier notes**: 512MB RAM, ephemeral disk, platform injects `PORT`
+and sets `RENDER=true` (disables `allow_custom` training on the live site).
+No `render.yaml`/`Procfile` — configure the Docker runtime in the dashboard.
+
+**Local verification** (not part of the image):
+
+```bash
+python CyberAttackPrediction/smoke_test.py   # 28 in-process checks
+python CyberAttackPrediction/live_smoke.py   # 15 checks against a running container
+```
+
+> `smoke_test.py` and `live_smoke.py` are local audit helpers and are currently
+> untracked in git.
 
 ## 🏗️ Project Structure
 
 - 📁 [**CyberAttackPrediction/**](CyberAttackPrediction/) — Main project folder
-  - 📁 [static/](CyberAttackPrediction/static/) — Styles, JS & web images
+  - 📁 [static/](CyberAttackPrediction/static/) — Styles, images, `sw.js`; `ts/` holds TypeScript sources (compiled to gitignored `js/` in Docker)
   - 📁 [templates/](CyberAttackPrediction/templates/) — HTML pages
   - 📁 [model/](CyberAttackPrediction/model/) — Saved AI model files
-  - 📁 [Dataset/](CyberAttackPrediction/Dataset/) — All CSV training & test data
+  - 📁 [Dataset/](CyberAttackPrediction/Dataset/) — Training & test CSVs (most tracked so Render can train; `uploaded_*.csv` / `custom_train.csv` ignored)
+  - 📁 [error-bus/](CyberAttackPrediction/error-bus/) — Go sidecar source (`go.mod`, `main.go`; binary ignored)
+  - 📁 [rust_auth/](CyberAttackPrediction/rust_auth/) — Rust guest-auth crate (`Cargo.lock` tracked)
+  - 📁 [static/ts/](CyberAttackPrediction/static/ts/) — TypeScript sources + `package.json`
   - 🐍 **[Main.py](CyberAttackPrediction/Main.py)** — Flask backend (heart of the project)
+  - 🐍 [error_bus.py](CyberAttackPrediction/error_bus.py) — In-process event/heartbeat routes
   - 🐍 [train_model.py](CyberAttackPrediction/train_model.py) — AI trainer script
   - 📔 [ExtensionCyberAttack.ipynb](CyberAttackPrediction/ExtensionCyberAttack.ipynb) — Research notebook (Phase 2)
   - 📔 [ProposeCyberAttack.ipynb](CyberAttackPrediction/ProposeCyberAttack.ipynb) — Research notebook (Phase 1)
-  - 📄 [requirements.txt](CyberAttackPrediction/requirements.txt) — Python dependencies
-  - 📄 [users.json](CyberAttackPrediction/users.json) — User registry
+  - 📄 [requirements.txt](CyberAttackPrediction/requirements.txt) — Runtime deps (Docker/Render)
+  - 📄 [requirements-dev.txt](CyberAttackPrediction/requirements-dev.txt) — Notebook/SHAP stack (local only)
+  - 📄 users.json — User registry (**gitignored**)
+- 🐳 [Dockerfile](Dockerfile) — Multi-stage production image
+- ⚙️ [supervisord.conf](supervisord.conf) — Runs gunicorn + error-bus in the container
+- 📄 [.dockerignore](.dockerignore) — Keeps `.git`, venvs, node_modules, large CSVs out of the build context
 - 📁 [**assets/**](assets/) — Project assets
   - 📁 [images/](assets/images/) — Academic flowcharts and diagrams
 - 📁 [**docs/**](docs/) — Unified documentation hub
@@ -132,6 +185,19 @@ ADMIN_HASH=pbkdf2:sha256:600000$...
   - ⚙️ [Start_Jupyter_Venv.bat](scripts/Start_Jupyter_Venv.bat) — Jupyter launcher
   - 📜 [install_deps.ps1](scripts/install_deps.ps1) — Automated dependency installer
 - 🐍 [launcher.py](launcher.py) — Unified command center
-- 🔐 [.env](.env) — Sensitive configuration & secrets (Hidden from git)
+- 🔐 `.env` — Sensitive configuration & secrets (gitignored; optional if using `.flask_secret`)
+
+**Git tracking rules (post-deploy audit):** error-bus *sources*, `Cargo.lock`,
+and `static/ts/*` are tracked; `static/js/`, `node_modules/`, compiled binaries,
+`.flask_secret`, `users.json`, and `.env` are ignored.
+
+## 📡 API Contracts (frontend ↔ Flask)
+
+- Requests with `Accept: application/json` (or `cyberFetch`) get a JSON envelope via `wants_json()`; HTML form posts keep normal redirects.
+- **Login** (`/UserLoginAction`): `{ ok: true, data: { redirect: "/..." } }` (also accepts `data.redirect` at top level). Error codes: `INVALID_USERNAME`, `INVALID_PASSWORD`, etc.
+- **Signup** (`/SignupAction`): accepts a JSON body *or* form data.
+- **Train** (`/TrainAction`): multipart field `training_data` (file) or `local_dataset` (repo CSV name, e.g. `kdd_train.csv`).
+- **Uploads**: 25MB max → `413` with `code: "UPLOAD_TOO_LARGE"`; training files capped at 5000 rows.
+- `window.api` / `window.cyberFetch` are exposed from `base.html` for page scripts.
 
 Built with ❤️ for Academic Excellence — 2026

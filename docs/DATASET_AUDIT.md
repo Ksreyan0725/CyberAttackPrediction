@@ -49,6 +49,17 @@ So in total: **4 research datasets + 4 website working files = 8 CSVs**. All are
 
 ---
 
+## Git Tracking (post deploy-audit)
+
+`.gitignore` keeps most of `CyberAttackPrediction/Dataset/` **tracked** so the
+Render container can train on its ephemeral disk, while ignoring runtime
+artifacts:
+
+- Ignored: `uploaded_*.csv`, `custom_train.csv`, `X-IIoTID dataset.csv`, `static/Dataset/*.csv`
+- Tracked: research CSVs such as `kdd_train.csv`, `CIC-IDS2017.csv`, `CICDDos2019.csv`, sample/test files
+
+---
+
 ## In One Sentence
 
 > The project uses 4 datasets for research (in the notebooks) but the website only uses 1 by default — the duplicate folder was a leftover from an earlier phase and has been cleaned up.
