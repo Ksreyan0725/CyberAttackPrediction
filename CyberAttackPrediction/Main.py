@@ -39,6 +39,9 @@ import joblib
 import os
 import webbrowser
 import json
+import time
+import uuid
+from datetime import datetime
 from threading import Timer
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.model_selection import train_test_split
@@ -50,9 +53,10 @@ from sklearn.neural_network import MLPClassifier
 import secrets
 import subprocess
 import sys
+import requests
 
 #=================flask code starts here
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory, jsonify, render_template_string
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory, jsonify, render_template_string, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -67,6 +71,9 @@ import logging
 from docx import Document
 from docx.shared import Pt
 
+# Error/Log bus integration
+from error_bus import register_error_bus, event_logger, emit_event
+
 # Silence repetitive Heartbeat logs for a cleaner terminal experience
 class HeartbeatFilter(logging.Filter):
     def filter(self, record):
@@ -79,9 +86,39 @@ log.addFilter(HeartbeatFilter())
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__, static_url_path='')
-# Use a derived secret key for session integrity; fallback to a generated secret if environment is missing
-app.secret_key = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(32) if not os.getenv('FLASK_SECRET_KEY') else os.getenv('FLASK_SECRET_KEY'))
+# Upload/processing limits (must be defined before app creation)
+MAX_CONTENT_LENGTH = 25 * 1024 * 1024  # 25 MB max upload
+MAX_PREDICT_MB = 25
+MAX_PREDICT_ROWS = 5000
+
+app = Flask(__name__)
+# Secret key resolution: explicit env wins; otherwise persist one per container
+# so gunicorn worker recycles (--max-requests) don't invalidate every session.
+if os.getenv('FLASK_SECRET_KEY'):
+    app.secret_key = os.getenv('FLASK_SECRET_KEY')
+else:
+    _secret_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.flask_secret')
+    try:
+        if os.path.exists(_secret_file):
+            with open(_secret_file, 'r') as _sf:
+                app.secret_key = _sf.read().strip()
+        if not app.secret_key:
+            app.secret_key = secrets.token_hex(32)
+            with open(_secret_file, 'w') as _sf:
+                _sf.write(app.secret_key)
+    except Exception:
+        app.secret_key = secrets.token_hex(32)
+app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH  # 25 MB upload limit
+
+
+def wants_json():
+    """True when the client expects a JSON envelope (api.ts sets Accept: application/json)."""
+    if request.is_json or request.path.startswith('/api/'):
+        return True
+    return 'application/json' in (request.headers.get('Accept') or '')
+
+# Register error/log bus (middleware, endpoints, event emitter)
+register_error_bus(app)
 
 # PROPRIETARY ADMIN SECURITY CONFIG (Loaded from Environment)
 ADMIN_ID = os.getenv('ADMIN_USER', 'admin')
@@ -115,12 +152,12 @@ def security_pre_check():
     if 'csrf_token' not in session:
         session['csrf_token'] = secrets.token_hex(32)
 
-    # 2. CSRF Validation for all state-changing requests (POST/PUT/DELETE)
+# 2. CSRF Validation for all state-changing requests (POST/PUT/DELETE)
     if request.method in ['POST', 'PUT', 'DELETE']:
-        # Exempt specific public routes if necessary (None currently)
-        exempt_routes = ['/UserLoginAction', '/SignupAction'] # Optional: allow initial auth without token if needed
+        # Exempt specific public routes if necessary
+        exempt_routes = ['/UserLoginAction', '/SignupAction', '/api/heartbeat']
         if request.path in exempt_routes:
-             return
+            return
              
         # Check header or form data for the token
         token = request.headers.get('X-CSRF-Token') or request.form.get('csrf_token')
@@ -273,21 +310,6 @@ def ClearResults():
     
     return jsonify({"status": "success", "message": "Analysis results wiped successfully."})
 
-@app.route('/api/heartbeat', methods=['GET', 'POST'])
-def heartbeat():
-    """Silent Heartbeat for Smart Launch and System Status Sync."""
-    global browser_timer, PULSE_DETECTED
-    
-    # Pulse detected! Mark system as having an active session
-    PULSE_DETECTED = True
-    
-    # If a heartbeat arrives, an active tab exists - cancel the startup browser launch
-    if browser_timer and browser_timer.is_alive():
-        print("[Pulse Detection] Pulse detected from existing tab. Cancelling auto-launch.")
-        browser_timer.cancel()
-        
-    return jsonify({"status": system_status, "health": "online", "pulse": "active"})
-
 # --- Security & User Management ---
 USERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "users.json")
 
@@ -324,8 +346,16 @@ def save_users(users):
     with open(USERS_FILE, 'w') as f:
         json.dump(users, f, indent=4)
 
+def _clear_guest_identity():
+    """Drops a temporary guest identity so the visitor can sign up or log in
+    with a real account. Real logins are untouched."""
+    if session.get('is_guest'):
+        session.pop('user', None)
+        session.pop('is_guest', None)
+
 @app.route('/UserLogin', methods=['GET', 'POST'])
 def UserLogin():
+    _clear_guest_identity()
     if 'user' in session:
         return redirect(url_for('train_view'))
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -408,13 +438,18 @@ def UserLoginAction():
             with open(os.path.join(base_dir, "saved_creds.json"), 'w') as f:
                 json.dump({"user": ADMIN_ID, "token": token}, f)
             session['remembered'] = True
-        return jsonify({"status": "success", "message": "Ultimate Admin access granted!", "redirect": url_for('train_view')})
+        emit_event('info', 'LOGIN_SUCCESS', f'Admin login: {username}', route='/UserLoginAction', username=username)
+        return jsonify({
+            'ok': True,
+            'data': {'redirect': url_for('train_view')},
+            'message': 'Ultimate Admin access granted!',
+        })
 
     users = load_users()
     user_data = users.get(username)
     
     if not user_data:
-        return jsonify({"status": "error", "error_type": "invalid_username", "message": "Identification failed: Username not found."}), 401
+        return jsonify({'ok': False, 'code': 'INVALID_USERNAME', 'message': 'Identification failed: Username not found.'}), 401
 
     if check_password_hash(user_data['password'], password):
         session['user'] = user_data['username']
@@ -430,34 +465,55 @@ def UserLoginAction():
                 json.dump({"user": username, "token": token}, f)
             session['remembered'] = True
         
-        return jsonify({"status": "success", "message": f"Welcome, {username}!", "redirect": url_for('train_view')})
+        emit_event('info', 'LOGIN_SUCCESS', f'User login: {username}', route='/UserLoginAction', username=username)
+        return jsonify({
+            'ok': True,
+            'data': {'redirect': url_for('train_view')},
+            'message': f'Welcome, {username}!',
+        })
     else:
-        return jsonify({"status": "error", "error_type": "invalid_password", "message": "Identification failed: Incorrect password key."}), 401
+        return jsonify({'ok': False, 'code': 'INVALID_PASSWORD', 'message': 'Identification failed: Incorrect password key.'}), 401
 
 @app.route('/GuestLogin', methods=['POST'])
 def GuestLogin():
     try:
-        # Call the Rust engine securely
+        # Detect platform and pick the right native binary.
+        # Windows (local) -> rust_auth.exe; Linux (Render/Docker) -> rust_auth.
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        rust_exe = os.path.join(base_dir, "rust_auth", "target", "release", "rust_auth.exe")
-        
-        if not os.path.exists(rust_exe):
-            return jsonify({"status": "error", "message": "Rust auth engine not found."}), 500
-            
-        result = subprocess.run([rust_exe], capture_output=True, text=True)
-        if result.returncode != 0:
-            return jsonify({"status": "error", "message": "Rust engine failed to generate credentials."}), 500
-            
-        # Parse the secure JSON output from Rust
-        import json
-        guest_creds = json.loads(result.stdout)
-        
-        # We don't save this to users.json to keep it strictly temporary and memory-safe
-        # We just forcefully authenticate the session using the cryptographic anchor
+        if os.name == 'nt':
+            rust_bin = os.path.join(base_dir, "rust_auth", "target", "release", "rust_auth.exe")
+        else:
+            rust_bin = os.path.join(base_dir, "rust_auth", "target", "release", "rust_auth")
+
+        guest_creds = None
+        engine_used = "python-fallback"
+
+        if os.path.exists(rust_bin):
+            result = subprocess.run([rust_bin], capture_output=True, text=True)
+            if result.returncode == 0:
+                import json
+                guest_creds = json.loads(result.stdout)
+                engine_used = "rust-" + ("windows" if os.name == 'nt' else "linux")
+
+        if guest_creds is None:
+            # Ultimate fallback: pure Python, works everywhere identically.
+            import json
+            import string as _string
+            alphabet = _string.ascii_letters + _string.digits
+            guest_creds = {
+                "username": "Guest_" + "".join(secrets.choice(alphabet) for _ in range(8)),
+                "password": "".join(secrets.choice(alphabet) for _ in range(16)),
+                "auth_token": "".join(secrets.choice(alphabet) for _ in range(32)),
+            }
+            engine_used = "python-fallback"
+
+        # Debug: show in browser console which engine produced the credentials.
+        print(f"[GuestLogin] engine={engine_used} username={guest_creds['username']}")
+
         session['user'] = guest_creds['username']
         session['is_guest'] = True
-        
-        return jsonify({"status": "success", "message": f"Secure Temp Account generated: {guest_creds['username']}", "redirect": url_for('train_view')})
+
+        return jsonify({"status": "success", "message": f"Secure Temp Account generated: {guest_creds['username']}", "redirect": url_for('train_view'), "engine": engine_used})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -483,30 +539,37 @@ def ResetPasswordAction():
 
 @app.route('/Signup')
 def Signup():
+    _clear_guest_identity()
     if 'user' in session:
         return redirect(url_for('train_view'))
     return render_template('Signup.html')
 
 @app.route('/SignupAction', methods=['POST'])
 def SignupAction():
-    username = request.form.get('username')
-    password = request.form.get('password')
-    
+    data = request.get_json(silent=True) or request.form
+    username = (data.get('username') or '').strip()
+    password = data.get('password')
+    if not username or not password:
+        return jsonify({'ok': False, 'code': 'VALIDATION_ERROR', 'message': 'Username and password are required.'}), 400
+
     users = load_users()
     # Check for both existing users and the reserved master admin identity
     if username in users or username.lower() == "admin":
-        return jsonify({"status": "error", "message": "Identity ID already registered in Archives!"}), 400
-        
+        return jsonify({'ok': False, 'code': 'VALIDATION_ERROR', 'message': 'Identity ID already registered in Archives!'}), 400
+
     users[username] = {
         "username": username,
         "password": generate_password_hash(password),
         "role": "user"
     }
     save_users(users)
+    # A guest converting to a real account stops being a guest.
+    session.pop('is_guest', None)
+    emit_event('info', 'ACCOUNT_CREATED', f'New account created: {username}', route='/SignupAction', username=username)
     return jsonify({
-        "status": "success", 
-        "message": "Account created successfully!",
-        "user_data": {"username": username, "password": password}
+        'ok': True,
+        'data': {"username": username, "password": password},
+        'message': 'Account created successfully!',
     })
 
 @app.route('/Account')
@@ -515,7 +578,11 @@ def Account():
         return redirect(url_for('UserLogin'))
     users = load_users()
     user_data = users.get(session['user'])
-    return render_template('AccountSettings.html', user_data=user_data)
+    is_guest = bool(session.get('is_guest'))
+    if user_data is None and is_guest:
+        # Temporary guest: show the conversion form prefilled with the temp identity.
+        user_data = {"username": session['user'], "role": "guest"}
+    return render_template('AccountSettings.html', user_data=user_data, is_guest=is_guest)
 
 @app.route('/UpdateAccountAction', methods=['POST'])
 def UpdateAccountAction():
@@ -528,6 +595,25 @@ def UpdateAccountAction():
     
     users = load_users()
     if old_username not in users:
+        # Guest → real account conversion: a name AND a key are both required,
+        # since the temp identity has no stored credentials to update.
+        if session.get('is_guest'):
+            if not new_username or not new_password:
+                flash("Guests must set both a username and an access key to keep the account.", "warning")
+                return redirect(url_for('Account'))
+            if new_username in users or new_username.lower() == "admin":
+                flash("Identity ID already registered in Archives!", "danger")
+                return redirect(url_for('Account'))
+            users[new_username] = {
+                "username": new_username,
+                "password": generate_password_hash(new_password),
+                "role": "user"
+            }
+            save_users(users)
+            session['user'] = new_username
+            session.pop('is_guest', None)
+            flash("Guest account converted — welcome aboard!", "success")
+            return redirect(url_for('Account'))
         # Check for ultimate admin bypass
         if old_username == "admin" and session.get('is_ultimate'):
             # Ultimate admin can update themselves too (stored in file if they want)
@@ -553,6 +639,18 @@ def UpdateAccountAction():
         
     users[user_data['username']] = user_data
     save_users(users)
+
+    # If the identity itself changed, drop stale "remember me" credentials
+    # that still point to the old name — otherwise auto-login would restore
+    # the outdated identity on next launch.
+    if new_username != old_username:
+        try:
+            creds_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "saved_creds.json")
+            if os.path.exists(creds_file):
+                os.remove(creds_file)
+        except Exception:
+            pass
+
     flash("Profile updated successfully!", "success")
     return redirect(url_for('Account'))
 
@@ -632,36 +730,48 @@ def PredictAction():
     
     if rf_model is None:
         if not load_ml_model():
+            if wants_json():
+                return jsonify({'ok': False, 'code': 'MODEL_NOT_READY', 'message': 'Model not ready. Please run the training process first.'}), 503
             flash("Model not ready. Please run the training process first.", "warning")
             return redirect(url_for('train_view'))
 
     # Early guard: huge uploads hang the page at "100%" and die on hosted
     # (request timeout, small RAM). Reject fast with a clear message instead.
-    MAX_PREDICT_MB = 25
-    if request.content_length and request.content_length > MAX_PREDICT_MB * 1024 * 1024:
-        flash(f"File too large ({request.content_length / 1048576:.1f} MB). Keep prediction uploads under {MAX_PREDICT_MB} MB — split big captures into smaller samples.", "error")
+    if request.content_length and request.content_length > MAX_CONTENT_LENGTH:
+        err_msg = f"File too large ({request.content_length / 1048576:.1f} MB). Keep prediction uploads under {MAX_PREDICT_MB} MB — split big captures into smaller samples."
+        if wants_json():
+            return jsonify({'ok': False, 'code': 'UPLOAD_TOO_LARGE', 'message': err_msg}), 413
+        flash(err_msg, "error")
         return redirect(url_for('predictView'))
 
     try:
         # Load test data from the uploaded file
         if 't1' not in request.files:
+            if wants_json():
+                return jsonify({'ok': False, 'code': 'UPLOAD_EMPTY', 'message': 'No file was uploaded. Please select a CSV file.'}), 400
             flash("No file was uploaded. Please select a CSV file.", "error")
             return redirect(url_for('predictView'))
             
         file = request.files['t1']
         if file.filename == '':
+            if wants_json():
+                return jsonify({'ok': False, 'code': 'UPLOAD_EMPTY', 'message': 'No file was selected. Please try again.'}), 400
             flash("No file was selected. Please try again.", "error")
             return redirect(url_for('predictView'))
             
         if not allowed_file(file.filename):
+            if wants_json():
+                return jsonify({'ok': False, 'code': 'INVALID_FORMAT', 'message': 'Invalid file type. Only CSV datasets are permitted.'}), 400
             flash("Invalid file type. Only CSV datasets are permitted.", "error")
             return redirect(url_for('predictView'))
             
         filename = secure_filename(file.filename)
         upload_path = os.path.join("Dataset", "uploaded_" + filename)
         file.save(upload_path)
-        testData_df = pd.read_csv(upload_path)
+        testData_df = pd.read_csv(upload_path, nrows=MAX_PREDICT_ROWS)
         if testData_df.empty:
+            if wants_json():
+                return jsonify({'ok': False, 'code': 'UPLOAD_EMPTY', 'message': 'The uploaded CSV is empty — no rows to analyze.'}), 400
             flash("The uploaded CSV is empty — no rows to analyze.", "error")
             return redirect(url_for('predictView'))
         
@@ -669,7 +779,10 @@ def PredictAction():
         if feature_columns is not None:
             missing_cols = [c for c in feature_columns if c not in testData_df.columns]
             if missing_cols:
-                flash(f"Invalid Prediction Data: Missing features {missing_cols}", "error")
+                err_msg = f"Invalid Prediction Data: Missing features {missing_cols}"
+                if wants_json():
+                    return jsonify({'ok': False, 'code': 'VALIDATION_ERROR', 'message': err_msg, 'details': {'missing': missing_cols}}), 400
+                flash(err_msg, "error")
                 return redirect(url_for('predictView'))
             
             # Reorder columns to match the model's expected input order
@@ -699,13 +812,26 @@ def PredictAction():
         # Prepare data for template rendering via macros
         predictions = [labels[p] for p in preds]
         
-        # PERSISTENCE: Store results in session for session-level caching
-        session['last_predictions'] = predictions
-        session['last_raw_data'] = raw_data.tolist()
-        
+        # Emitted for JSON/HTML clients alike — never persist raw rows in the
+        # session cookie (5000 rows would blow past browser cookie limits and
+        # silently log the user out). Results are rendered directly below or
+        # returned in the JSON body.
         # Convert feature columns to list if it exists for JSON serialization
         f_cols = feature_columns.tolist() if hasattr(feature_columns, 'tolist') else feature_columns
-        session['last_feature_columns'] = f_cols
+        
+        # Emit success event
+        emit_event('info', 'PREDICTION_SUCCESS', f'Predicted {len(predictions)} rows', route='/PredictAction', rows=len(predictions))
+        
+        if wants_json():
+            return jsonify({
+                'ok': True,
+                'data': {
+                    'predictions': predictions,
+                    'raw_data': raw_data.tolist(),
+                    'feature_columns': f_cols,
+                },
+                'message': f'Successfully predicted {len(predictions)} rows',
+            })
         
         return render_template('UserScreen.html', 
                              predictions=predictions, 
@@ -715,14 +841,21 @@ def PredictAction():
         
     except pd.errors.EmptyDataError:
         print("Error during prediction: uploaded file has no parseable data")
+        if wants_json():
+            return jsonify({'ok': False, 'code': 'UPLOAD_EMPTY', 'message': 'Could not read the file — it looks empty or is not a valid CSV.'}), 400
         flash("Could not read the file — it looks empty or is not a valid CSV.", "error")
         return redirect(url_for('predictView'))
     except UnicodeDecodeError:
         print("Error during prediction: file is not valid UTF-8 text")
+        if wants_json():
+            return jsonify({'ok': False, 'code': 'INVALID_FORMAT', 'message': 'Could not read the file — it is not a valid text CSV. Export it as CSV (UTF-8) and retry.'}), 400
         flash("Could not read the file — it is not a valid text CSV. Export it as CSV (UTF-8) and retry.", "error")
         return redirect(url_for('predictView'))
     except Exception as e:
         print(f"Error during prediction: {e}")
+        emit_event('error', 'PREDICTION_FAILED', str(e), route='/PredictAction', error_type=type(e).__name__)
+        if wants_json():
+            return jsonify({'ok': False, 'code': 'PREDICTION_FAILED', 'message': f'Analysis failed: {str(e)}'}), 500
         flash(f"Analysis failed: {str(e)}", "error")
         return redirect(url_for('predictView'))
 
@@ -1116,7 +1249,7 @@ def DownloadSample():
 @app.route('/TrainAction', methods=['POST'])
 def TrainAction():
     if 'user' not in session:
-        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+        return jsonify({'ok': False, 'code': 'UNAUTHORIZED', 'message': 'Unauthorized'}), 401
     
     # Check if a custom file was uploaded
     custom_path = None
@@ -1125,7 +1258,7 @@ def TrainAction():
         file = request.files['training_data']
         if file.filename != '':
             if on_hosted:
-                return jsonify({"status": "error", "message": "Custom uploads are available in the local version only."})
+                return jsonify({'ok': False, 'code': 'UPLOAD_DISABLED', 'message': 'Custom uploads are available in the local version only.'}), 403
             # Ensure Dataset directory exists
             base_dir = os.path.dirname(os.path.abspath(__file__))
             dataset_dir = os.path.join(base_dir, "Dataset")
@@ -1136,7 +1269,7 @@ def TrainAction():
             try:
                 file.save(custom_path)
             except Exception as e:
-                return jsonify({"status": "error", "message": f"Failed to save training file: {str(e)}"})
+                return jsonify({'ok': False, 'code': 'SERVER_ERROR', 'message': f'Failed to save training file: {str(e)}'}), 500
 
     # Option: use a file already present in the server's local Dataset folder.
     # No browser upload happens — training reads straight from server disk,
@@ -1147,12 +1280,12 @@ def TrainAction():
         # it reads files already on the server disk.
         if '..' in local_choice or '/' in local_choice or '\\' in local_choice \
                 or not local_choice.lower().endswith('.csv'):
-            return jsonify({"status": "error", "message": "Invalid local dataset selection."})
+            return jsonify({'ok': False, 'code': 'VALIDATION_ERROR', 'message': 'Invalid local dataset selection.'}), 400
         base_dir = os.path.dirname(os.path.abspath(__file__))
         dataset_dir = os.path.abspath(os.path.join(base_dir, "Dataset"))
         candidate = os.path.abspath(os.path.join(dataset_dir, local_choice))
         if not candidate.startswith(dataset_dir + os.sep) or not os.path.isfile(candidate):
-            return jsonify({"status": "error", "message": "Selected local dataset not found."})
+            return jsonify({'ok': False, 'code': 'NOT_FOUND', 'message': 'Selected local dataset not found.'}), 404
         custom_path = candidate
     
     # Call training with optional path
@@ -1165,19 +1298,62 @@ def TrainAction():
         if result.get('status') == 'success':
             load_ml_model()
             session['train_result'] = result
-            
-        return jsonify(result)
+            emit_event('info', 'TRAINING_SUCCESS', f'Model trained with {result.get("accuracy", "N/A")}% accuracy', route='/TrainAction', accuracy=result.get('accuracy'))
+        else:
+            emit_event('error', 'TRAINING_FAILED', result.get('message', 'Unknown error'), route='/TrainAction')
+        
+        # Return standardized response
+        if result.get('status') == 'success':
+            return jsonify({
+                'ok': True,
+                'data': result,
+                'message': 'Model training completed successfully',
+            })
+        else:
+            return jsonify({
+                'ok': False,
+                'code': 'TRAINING_FAILED',
+                'message': result.get('message', 'Training failed'),
+                'details': result.get('details'),
+            }), 500
     finally:
         system_status = "ready"
+
+@app.errorhandler(413)
+def handle_413(e):
+    """Friendly too-large response (CSRF before_request may read the body first)."""
+    msg = f"File too large. Keep prediction uploads under {MAX_PREDICT_MB} MB — split big captures into smaller samples."
+    if wants_json():
+        return jsonify({'ok': False, 'code': 'UPLOAD_TOO_LARGE', 'message': msg}), 413
+    flash(msg, "error")
+    return redirect(url_for('predictView'))
+
 
 @app.errorhandler(404)
 def handle_404(e):
     """Premium 404 error handler for CyberShield."""
+    if wants_json():
+        return jsonify({
+            'ok': False,
+            'code': 'NOT_FOUND',
+            'message': 'The requested resource was not found.',
+            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'requestId': getattr(g, 'request_id', None),
+        }), 404
     return render_template('404.html'), 404
 
 @app.errorhandler(500)
 def handle_500(e):
     """Secure 500 error handler to prevent internal logic leakage."""
+    request_id = getattr(g, 'request_id', None)
+    if wants_json():
+        return jsonify({
+            'ok': False,
+            'code': 'SERVER_ERROR',
+            'message': 'System Integration Error: The request could not be processed safely.',
+            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'requestId': getattr(g, 'request_id', None),
+        }), 500
     return render_template('404.html', message="System Integration Error: The request could not be processed safely."), 500
 
 # --- Legal & Contact Routes ---
@@ -1199,18 +1375,13 @@ def favicon():
                              'favicon.svg', mimetype='image/svg+xml')
 
 if __name__ == '__main__':
-    import sys
-    
-    # Heartbeat-Aware Smart Launch:
+# Heartbeat-Aware Smart Launch:
     if '--no-browser' not in sys.argv:
         if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
-            print("[Smart Launch] Starting pulse detector (6.5s)...")
-            browser_timer = Timer(6.5, open_browser)
-            browser_timer.start()
-    
-    # use_reloader=False prevents Werkzeug from spawning a second child process.
-    # Without this, the reloader restarts the server on every file save, which:
-    #   1. Resets PULSE_DETECTED to False in the new process → fires a second browser window
-    #   2. Causes WinError 10038 (invalid socket) on Python 3.13 / Windows
-    # The launcher handles process management, so the reloader is not needed here.
-    app.run(port=2026, use_reloader=False)
+            # Check if pulse already detected (e.g., from existing tab sending heartbeats)
+            if not PULSE_DETECTED:
+                print("[Smart Launch] Starting pulse detector (1.5s)...")
+                browser_timer = Timer(1.5, open_browser)
+                browser_timer.start()
+            else:
+                print("[Smart Launch] Active pulse detected, skipping auto-launch.")

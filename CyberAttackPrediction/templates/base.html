@@ -54,11 +54,32 @@
     </script>
 
 
-    <script>(function () { let wasOffline = false, checkInProgress = false; async function checkPulse() { if (checkInProgress) return; checkInProgress = true; const statusPill = document.getElementById('globalSystemStatus'), statusText = statusPill?.querySelector('.status-text'), trainingPill = document.getElementById('trainingStatus'), trainingText = trainingPill?.querySelector('.status-text') || document.getElementById('statusText'), trainingDot = trainingPill?.querySelector('.status-dot'); try { const response = await fetch('/api/heartbeat', { method: 'GET', cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } }); if (response.ok) { const data = await response.json(), isBusy = data.status === 'busy'; if (statusPill) { statusPill.className = 'system-status-pill status-' + (isBusy ? 'busy' : 'ready') + ' me-2'; if (statusText) statusText.textContent = isBusy ? 'System Busy' : 'System Ready' } if (trainingPill) { const startBtn = document.getElementById('startTrainingBtn'); if (!startBtn || !startBtn.disabled) { if (isBusy) { trainingPill.className = 'status-badge status-running d-flex align-items-center'; if (trainingText) trainingText.textContent = 'System Processing...'; if (trainingDot) trainingDot.className = 'status-dot dot-busy' } else if (!trainingPill.classList.contains('status-success')) { trainingPill.className = 'status-badge status-idle d-flex align-items-center'; if (trainingText) trainingText.textContent = 'System Ready'; if (trainingDot) trainingDot.className = 'status-dot dot-ready' } } } if (wasOffline) setTimeout(() => { if (typeof reloadWithScroll === 'function') reloadWithScroll(); else window.location.reload() }, 500); wasOffline = false } } catch (err) { wasOffline = true; if (statusPill) { statusPill.className = 'system-status-pill status-offline me-2'; if (statusText) statusText.textContent = 'Server Offline' } if (trainingPill) { trainingPill.className = 'status-badge bg-danger bg-opacity-10 text-danger d-flex align-items-center'; if (trainingText) trainingText.textContent = 'Server Offline' } } finally { checkInProgress = false } } setInterval(checkPulse, 3000); document.addEventListener('DOMContentLoaded', checkPulse) })();</script>
+    <script type="module">
+  import { CyberNotify } from '/static/js/notification.js';
+  import { cyberFetch, api } from '/static/js/api.js';
 
-    <script>let lastToastInfo = { message: '', time: 0 }; function showToast(message, type = 'info', details = null) { const container = document.getElementById('toastContainer'); if (!container) return; const currentTime = Date.now(); if (message === lastToastInfo.message && (currentTime - lastToastInfo.time < 3000)) return; lastToastInfo = { message, time: currentTime }; const toast = document.createElement('div'); toast.className = `premium-toast toast-${type}`; if (details) toast.classList.add('cursor-pointer'); let icon = 'info-circle'; if (type === 'success') icon = 'check-circle'; if (type === 'error' || type === 'danger') icon = 'exclamation-circle'; if (type === 'warning') icon = 'exclamation-triangle'; const subtext = details ? '<div class="xx-small opacity-75 mt-1 mt-n1"><i class="fas fa-search-plus me-1"></i>Click to view details</div>' : ''; toast.innerHTML = `<div class="toast-icon text-white"><i class="fas fa-${icon}"></i></div><div class="toast-body"><div class="small fw-bold dynamic-text">${message}</div>${subtext}</div><button type="button" class="btn-close ms-2 small" style="font-size:0.6rem;filter:var(--close-filter,none);" onclick="event.stopPropagation();this.parentElement.remove()"></button>`; if (details) toast.onclick = () => showDetailModal(type.toUpperCase() + ' DETAILS', `<div class="p-3 rounded-3 border-glass font-monospace text-break" style="background:var(--bg-card-soft);">${details}</div>`); container.appendChild(toast); toast.offsetHeight; toast.classList.add('show'); setTimeout(() => { if (toast.parentElement) { toast.classList.add('hide'); setTimeout(() => toast.remove(), 500) } }, 5000) } document.addEventListener('DOMContentLoaded', () => { document.querySelectorAll('.flash-message-data').forEach(el => { showToast(el.dataset.message, el.dataset.category); el.remove() }) }); (function () { const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'), setupAjax = () => { if (window.jQuery && csrfToken) $.ajaxSetup({ headers: { 'X-CSRF-Token': csrfToken } }); else setTimeout(setupAjax, 100) }; setupAjax(); window.addEventListener('storage', e => { if (e.key === 'cybershield_logout') window.location.href = '/UserLogin?reason=sync_logout' }); document.addEventListener('click', e => { if (e.target.closest('form[action*="/Logout"]')) localStorage.setItem('cybershield_logout', Date.now()) }) })();</script>
+  // Expose globally for legacy inline scripts
+  window.CyberNotify = CyberNotify;
+  window.cyberFetch = cyberFetch;
+  window.api = api;
+
+  // Legacy showToast alias for any remaining inline calls
+  window.showToast = (message, type = 'info', details) => CyberNotify.toast({ message, type, details });
+
+  // Replay flash messages through new system
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.flash-message-data').forEach(el => {
+      const msg = el.dataset.message;
+      const cat = el.dataset.category;
+      if (msg && cat) CyberNotify.toast({ message: msg, type: cat, source: 'server' });
+      el.remove();
+    });
+  });
+</script>
 
         <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script type="module" src="{{ url_for('static', filename='js/notification.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/api.js') }}"></script>
     {% block extra_css %}{% endblock %}
 </head>
 
@@ -196,9 +217,8 @@
                                 style="font-size: 0.5rem; letter-spacing: 0.5px; box-shadow: 0 0 10px rgba(220, 38, 38, 0.5);">MASTER</span>
                             {% endif %}
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end glass-card border-glass p-2"
-                            aria-labelledby="userDropdown"
-                            style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
+                        <ul class="dropdown-menu dropdown-menu-end glass-card border-glass user-dropdown p-2"
+                            aria-labelledby="userDropdown">
                             <li>
                                 <a class="dropdown-item nav-link rounded-3 px-3 mb-1 text-light" href="{{ url_for('Account') }}">
                                     <i class="fas fa-cog me-1"></i> Account Settings
@@ -1027,6 +1047,7 @@
                 };
 
             ut(gt());
+            window.__cyberApplyTheme = ut; // hook for Service Worker theme sync
             window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change', () => { if (gt() === 'auto') ut('auto'); });
             tg?.addEventListener('click', () => {
                 if (typeof bootstrap !== 'undefined') {
@@ -1045,11 +1066,42 @@
                 else if (cur === 'light') n = 'dark';
                 else n = 'auto';
                 const wasDark = !htm.classList.contains('light-mode');
-                localStorage.setItem('theme', n);
-                ut(n, true);
-                const isDark = !htm.classList.contains('light-mode');
-                if (wasDark === isDark && typeof showToast !== 'undefined') {
-                    showToast(`Theme: Auto Mode (following system: ${isDark ? 'Dark' : 'Light'})`, 'info');
+                const applyTheme = () => {
+                    localStorage.setItem('theme', n);
+                    ut(n, !useReveal);
+                    try {
+                        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                            navigator.serviceWorker.controller.postMessage({ type: 'THEME_SET', theme: n });
+                        }
+                    } catch (e) {}
+                    const isDark = !htm.classList.contains('light-mode');
+                    if (wasDark === isDark && typeof showToast !== 'undefined') {
+                        showToast(`Theme: Auto Mode (following system: ${isDark ? 'Dark' : 'Light'})`, 'info');
+                    }
+                };
+                // Telegram-style circular reveal from the toggle button.
+                // Falls back to the cross-fade when unsupported or reduced motion.
+                const useReveal = !!(tg && document.startViewTransition &&
+                    !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+                if (useReveal) {
+                    try {
+                        const transition = document.startViewTransition(applyTheme);
+                        transition.ready.then(() => {
+                            const r = tg.getBoundingClientRect();
+                            const x = r.left + r.width / 2;
+                            const y = r.top + r.height / 2;
+                            const maxR = Math.hypot(
+                                Math.max(x, window.innerWidth - x),
+                                Math.max(y, window.innerHeight - y)
+                            );
+                            document.documentElement.animate(
+                                { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${maxR}px at ${x}px ${y}px)`] },
+                                { duration: 550, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
+                            );
+                        }).catch(() => {});
+                    } catch (e) { applyTheme(); }
+                } else {
+                    applyTheme();
                 }
             });
         })();
@@ -1072,19 +1124,13 @@
     
     {% block extra_js %}{% endblock %}
     
-    <!-- Service Worker removed: pages always load fresh from the server.
-         This one-time cleanup unregisters it in browsers that installed it
-         earlier. Touching nothing else — logins, theme choice, and all
-         localStorage data stay exactly as they are. -->
+    <!-- Service Worker: data-only cache (temporary /api/* responses).
+         Never stores HTML, CSS, JS, images, or third-party files. -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.getRegistrations().then((regs) => {
-                    regs.forEach((r) => r.unregister());
-                });
-                if ('caches' in window) {
-                    caches.delete('cybershield-offline-cache-v1');
-                }
+                navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}")
+                    .catch((err) => console.log('[CyberShield] ServiceWorker skipped:', err));
             });
         }
     </script>
@@ -1100,7 +1146,7 @@
             <div class="guest-content text-start">
                 <h6 class="fw-bold mb-1">Temporary Session</h6>
                 <p class="xx-small mb-2 opacity-75">You are using a temporary guest account. Create a secure account to save your progress!</p>
-                <a href="/Signup" class="btn btn-warning btn-sm rounded-pill py-1 px-3 xx-small fw-bold guest-cta">Create Account</a>
+                        <a href="/Account" class="btn btn-warning btn-sm rounded-pill py-1 px-3 xx-small fw-bold guest-cta">Create Account</a>
             </div>
             <button type="button" class="btn-close ms-auto guest-close" aria-label="Close" onclick="document.getElementById('guestReminderPopup').style.display='none'"></button>
         </div>
@@ -1165,9 +1211,168 @@
 
         @keyframes slideInGuest {
             0% { transform: translateX(150%); }
-            100% { transform: translateX(0); }
+100% { transform: translateX(0); }
         }
-    </style>
+    }
     {% endif %}
+
+<script type="module">
+  import { cyberFetch } from '/static/js/api.js';
+  window.cyberFetch = cyberFetch;
+
+  // Theme choice sync via Service Worker: this tab pushes its choice, other
+  // tabs follow it, and a fresh tab with no saved choice adopts the SW copy.
+  (function () {
+    function currentTheme() {
+      try { return localStorage.getItem('theme') || 'auto'; } catch (e) { return 'auto'; }
+    }
+    function applyTheme(th) {
+      if (typeof window.__cyberApplyTheme === 'function') {
+        try { localStorage.setItem('theme', th); } catch (e) {}
+        window.__cyberApplyTheme(th, true);
+      }
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        const data = event.data || {};
+        if (data.type === 'THEME_APPLY' && data.theme) {
+          applyTheme(data.theme);
+        } else if (data.type === 'THEME_VALUE' && data.theme) {
+          let saved = null;
+          try { saved = localStorage.getItem('theme'); } catch (e) {}
+          if (!saved) applyTheme(data.theme);
+        }
+      });
+      const push = () => {
+        try {
+          if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ type: 'THEME_SET', theme: currentTheme() });
+            navigator.serviceWorker.controller.postMessage({ type: 'THEME_GET' });
+          }
+        } catch (e) {}
+      };
+      if (navigator.serviceWorker.controller) push();
+      navigator.serviceWorker.addEventListener('controllerchange', push);
+      navigator.serviceWorker.ready.then(push).catch(() => {});
+    }
+  })();
+  
+  // Heartbeat with exponential backoff retry logic (industry standard)
+  (function() {
+    let consecutiveFails = 0;
+    let maxRetries = 4;
+    let baseDelay = 3000; // 3 seconds initial
+    let maxDelay = 120000; // 2 minutes max
+    let offlineBanner = null;
+    let offlineStart = 0;
+    let isChecking = false;
+
+    // Exponential backoff delays: 3s, 12s, 48s, 120s (capped at 2 min)
+    function getDelay(attempt) {
+      const delay = Math.min(baseDelay * Math.pow(4, attempt), maxDelay);
+      // Add jitter (±25%) to prevent thundering herd
+      const jitter = delay * 0.25 * (Math.random() * 2 - 1);
+      return Math.floor(delay + jitter);
+    }
+
+    async function checkPulse() {
+      if (isChecking) return;
+      isChecking = true;
+
+      try {
+        const response = await cyberFetch('/api/heartbeat', { method: 'GET', timeoutMs: 5000 }, { showToastOnError: false, retryConfig: { retries: 0 } });
+        if (response.ok) {
+          if (consecutiveFails > 0) {
+            // Server just came back
+            CyberNotify.toast({ message: 'Server reconnected', type: 'success' });
+            hideOfflineBanner();
+          }
+          consecutiveFails = 0;
+        } else {
+          throw new Error('HTTP error');
+        }
+      } catch (err) {
+        consecutiveFails++;
+        console.warn('[Heartbeat] Attempt', consecutiveFails, 'failed:', err.message);
+        
+        if (consecutiveFails >= maxRetries) {
+          // Max retries exceeded - server is down
+          showOfflineBanner(true);
+          CyberNotify.toast({ 
+            message: 'Server is down. Please try again later.', 
+            type: 'error', 
+            persistent: true 
+          });
+        } else if (consecutiveFails >= 2) {
+          // Show offline banner after 2 failures
+          showOfflineBanner();
+        }
+        
+        // Schedule next check with exponential backoff
+        const delay = getDelay(consecutiveFails - 1);
+        console.log('[Heartbeat] Next check in', delay, 'ms (attempt', consecutiveFails, '/', maxRetries, ')');
+        setTimeout(checkPulse, delay);
+        return;
+      } finally {
+        isChecking = false;
+      }
+
+      // Success - check again in 3 seconds
+      setTimeout(checkPulse, 3000);
+    }
+
+    function showOfflineBanner(isFinal = false) {
+      if (offlineBanner) return;
+      offlineBanner = document.createElement('div');
+      offlineBanner.id = 'cyber-offline-banner';
+      offlineBanner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#ff4757;color:#fff;text-align:center;padding:0.6rem 1rem;font-size:0.85rem;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.3);animation:slideDown 0.3s ease;';
+      const message = isFinal 
+        ? '<i class="fas fa-server me-2"></i><strong>Server is down</strong> — Please try again later.'
+        : '<i class="fas fa-wifi-slash me-2"></i><strong>Server unreachable</strong> — attempting reconnection...';
+      offlineBanner.innerHTML = '<i class="fas fa-wifi-slash me-2"></i>' + message + ' <span id="cyber-reconnect-eta" style="opacity:0.8;"></span>';
+      document.body.insertBefore(offlineBanner, document.body.firstChild);
+      const style = document.createElement('style');
+      style.textContent = '@keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}';
+      document.head.appendChild(style);
+      offlineBanner._start = Date.now();
+      offlineBanner._timer = setInterval(() => {
+        const elapsed = Math.round((Date.now() - offlineBanner._start) / 1000);
+        const eta = document.getElementById('cyber-reconnect-eta');
+        if (eta) eta.textContent = '(offline ' + elapsed + 's)';
+      }, 1000);
+    }
+
+    function hideOfflineBanner() {
+      if (offlineBanner) {
+        offlineBanner.style.animation = 'slideDown 0.3s ease reverse';
+        setTimeout(() => { offlineBanner.remove(); offlineBanner = null; }, 300);
+        if (offlineBanner._timer) clearInterval(offlineBanner._timer);
+      }
+    }
+
+    // Start the heartbeat loop
+    checkPulse();
+
+    // Global JS error catcher (backup for TypeScript module)
+    window.addEventListener('error', function(e) {
+      CyberNotify.toast({ message: 'App error: ' + (e.message || 'Unknown script error'), type: 'error', details: e.filename ? 'at ' + e.filename + ':' + (e.lineno || 0) : '' });
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      const msg = (e.reason && (e.reason.message || e.reason)) || 'Unhandled promise rejection';
+      CyberNotify.toast({ message: 'Background task failed: ' + msg, type: 'error' });
+      e.preventDefault();
+    });
+
+    // Page unload guard
+    window.addEventListener('beforeunload', function(e) {
+      const busy = document.querySelector('[data-cyber-busy="true"]');
+      if (busy) {
+        e.preventDefault();
+        e.returnValue = 'An analysis is running. Leaving may cancel it.';
+        return e.returnValue;
+      }
+    });
+  })();
+</script>
 </body>
 </html>

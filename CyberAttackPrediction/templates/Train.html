@@ -667,29 +667,21 @@
             }
             
             try {
-                const response = await fetch("{{ url_for('TrainAction') }}", {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: formData
-                });
+                const result = await api.train(trainMode === 'custom' ? selectedFile : (trainMode === 'local' ? localDataset.value : undefined));
                 
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    showToast('Model training complete!', 'success');
+                if (result.ok) {
+                    CyberNotify.toast({ message: 'Model training complete!', type: 'success' });
                     addLog("Processing dataset features...", "info");
                     await new Promise(r => setTimeout(r, 600));
                     addLog("Fitting AI Model (Random Forest)...", "info");
                     await new Promise(r => setTimeout(r, 800));
-                    addLog(`Success! Accuracy: ${data.accuracy}%`, 'success');
-                    addLog(`Dataset used: ${data.dataset_used}`, 'info');
+                    addLog(`Success! Accuracy: ${result.data.accuracy}%`, 'success');
+                    addLog(`Dataset used: ${result.data.dataset_used}`, 'info');
                     
-                    document.getElementById('finalAccuracy').textContent = data.accuracy + '%';
+                    document.getElementById('finalAccuracy').textContent = result.data.accuracy + '%';
                     const classListing = document.getElementById('classListing');
                     classListing.innerHTML = '';
-                    data.classes.forEach(cls => {
+                    result.data.classes.forEach(cls => {
                         const badge = document.createElement('span');
                         badge.className = 'badge bg-primary-light text-primary border border-primary border-opacity-25 py-2 px-3 rounded-pill me-2 mb-2';
                         badge.textContent = cls.toUpperCase();
@@ -700,13 +692,13 @@
                     statusBadge.className = 'status-badge status-success';
                     statusBadge.innerHTML = '<i class="fas fa-check-circle me-1 small"></i> Training Complete';
                 } else {
-                    showToast(`Training Failed: ${data.message}`, 'error', data.details || data.message);
-                    addLog(`CRITICAL ERROR: ${data.message}`, 'error');
+                    CyberNotify.toast({ message: result.error?.message || 'Training Failed', type: 'error', details: result.error?.details });
+                    addLog(`CRITICAL ERROR: ${result.error?.message}`, 'error');
                     statusBadge.className = 'status-badge status-idle';
                     statusBadge.innerHTML = '<i class="fas fa-times-circle me-1 small"></i> Training Aborted';
                 }
             } catch (error) {
-                showToast(`System Error: ${error.message}`, 'error', error.stack || error.message);
+                CyberNotify.toast({ message: `System Error: ${error.message}`, type: 'error', details: error.stack || error.message });
                 addLog(`System Error: ${error.message}`, 'error');
                 statusBadge.className = 'status-badge status-idle';
                 statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle me-1 small"></i> Error';

@@ -653,23 +653,27 @@
                     const res = await fetch('/UserLoginAction', { method: 'POST', body: formData });
                     const data = await res.json();
 
-                    if (data.status === 'success') {
+                    // Backend returns {ok, data:{redirect}, message} (not status/redirect).
+                    const loginOk = data.ok === true || data.status === 'success';
+                    if (loginOk) {
                         btn.innerHTML = '<i class="fas fa-lock-open me-2"></i>Authorized';
                         btn.classList.replace('btn-primary', 'btn-success');
                         showToast(data.message, "success");
-                        setTimeout(() => window.location.href = (data.redirect && data.redirect.startsWith('/')) ? data.redirect : '/', 800);
+                        const dest = (data.data && data.data.redirect) || data.redirect || '/';
+                        setTimeout(() => window.location.href = dest.startsWith('/') ? dest : '/', 800);
                     } else {
                         failedAttempts++;
                         showToast(data.message, "error");
 
                         // UX Hardening: Precise Clear/Focus Logic
-                        if (data.error_type === "invalid_username") {
+                        const errCode = data.code || data.error_type;
+                        if (errCode === 'INVALID_USERNAME' || errCode === 'invalid_username') {
                             // If Identity is missing, the combo is fully invalidated
                             usernameField.value = '';
                             passwordField.value = '';
                             usernameField.classList.add('is-invalid-glow');
                             usernameField.focus();
-                        } else if (data.error_type === "invalid_password") {
+                        } else if (errCode === 'INVALID_PASSWORD' || errCode === 'invalid_password') {
                             // Specify target field for remediation
                             passwordField.value = '';
                             passwordField.classList.add('is-invalid-glow');

@@ -475,7 +475,7 @@
             usernameInput.classList.remove('is-invalid-glow');
 
             if (password.length < 5) {
-                showToast("Encryption key too weak (min 5 chars)", "warning");
+                CyberNotify.toast({ message: "Encryption key too weak (min 5 chars)", type: "warning" });
                 return;
             }
 
@@ -486,33 +486,28 @@
 
             try {
                 const formData = new FormData(this);
-                const response = await fetch('/SignupAction', {
-                    method: 'POST',
-                    body: formData
-                });
+                const result = await api.signup(username, password);
 
-                const data = await response.json();
-
-                if (data.status === 'success') {
+                if (result.ok) {
                     // Fill and show modal
-                    document.getElementById('displayUsername').innerText = data.user_data.username;
-                    document.getElementById('displayPassword').innerText = data.user_data.password;
+                    document.getElementById('displayUsername').innerText = result.data.username;
+                    document.getElementById('displayPassword').innerText = result.data.password;
                     
                     usernameInput.classList.add('is-valid-glow');
                     successModal.show();
                     
                     document.getElementById('btnSaveLogin').onclick = () => {
-                        window.location.href = "/UserLogin?username=" + encodeURIComponent(data.user_data.username);
+                        window.location.href = "/UserLogin?username=" + encodeURIComponent(result.data.username);
                     };
                 } else {
-                    showToast(data.message, "danger");
-                    if (data.message.toLowerCase().includes("identity") || data.message.toLowerCase().includes("registered")) {
+                    CyberNotify.toast({ message: result.error?.message || "Archives link interrupted.", type: "error", details: result.error?.details });
+                    if (result.error?.code === 'VALIDATION_ERROR') {
                         usernameInput.classList.add('is-invalid-glow');
                         usernameInput.focus();
                     }
                 }
             } catch (error) {
-                showToast("Archives link interrupted.", "danger");
+                CyberNotify.toast({ message: "Archives link interrupted.", type: "error", details: error.message });
                 console.error(error);
             } finally {
                 submitBtn.disabled = false;
@@ -535,4 +530,4 @@
         }
     });
 </script>
-{% endblock %}
+{% endblock %}

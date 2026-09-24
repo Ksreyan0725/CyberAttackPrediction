@@ -1,0 +1,14 @@
+# Build context hygiene — keep the image small and builds reproducible.
+.git
+.venv
+venv
+**/__pycache__
+**/*.pyc
+**/*.pyo
+CyberAttackPrediction/static/ts/node_modules
+CyberAttackPrediction/rust_auth/target
+CyberAttackPrediction/Dataset/X-IIoTID dataset.csv
+CyberAttackPrediction/Dataset/uploaded_*.csv
+CyberAttackPrediction/logs
+*.log
+.env
