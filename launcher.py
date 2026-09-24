@@ -23,6 +23,10 @@ def main():
     """
     global IS_ADMIN
     IS_ADMIN = is_admin() # Cache for whole session
+
+    # Selecting text in the console used to freeze/kill the running server
+    # (Windows QuickEdit pause). Turn that off once at startup.
+    disable_quickedit()
     
     # Pillar 7: Stealth Lockdown
     hide_file(LOG_FILE)
@@ -88,6 +92,8 @@ def main():
                 # (restores the premium 'active' feel in most modern terminals)
                 sys.stdout.write('\033[5 q')
                 sys.stdout.flush()
+                # Ensure any leftover input is cleared before reading
+                clear_keyboard_buffer()
                 choice = input(f"  {prompt_tag} > ").strip().lower()
                 # Reset cursor to default (usually blinking block or bar) if needed, 
                 # but typically leaving it as bar is preferred for the theme.
@@ -134,7 +140,9 @@ def main():
                 'reset': '16', 'clear_settings': '16',
                 'alias': '17', 'register_all': '17',
                 'speed': '18', 'network': '18', 'speedtest': '18', 'internet': '18',
-                'log': '20', 'logs': '20', 'audit_logs': '20'
+                'log': '20', 'logs': '20', 'audit_logs': '20',
+                'copy': '21', 'snapshot': '21', 'serverlog': '21', 'serverlogs': '21',
+                'orbit': '22', 'orbitai': '22', 'ai': '22'
                 # NOTE: 'help', 'guide', 'h', 'cs', 'bro', 'cyber' intentionally excluded
                 # — they are handled by the help_patterns block above to avoid conflict.
             }
@@ -157,6 +165,7 @@ def main():
             if choice in ['1', '2'] and h_score < 50:
                 print(f"\n{RED}[!] CAUTION: Health Score is low ({h_score}%).{RESET}")
                 print(f"{YELLOW}[!] Launch may fail due to missing files or dependencies.{RESET}")
+                clear_keyboard_buffer()
                 confirm = input("[?] Proceed regardless? (y/n): ").lower()
                 if confirm != 'y': continue
 
@@ -224,6 +233,7 @@ def main():
                 input("\nPress ENTER to return to menu...")
 
             elif choice in ['10', 'push', 'commit', 'sync', 'upload']:
+                clear_keyboard_buffer()
                 commit_msg = input("\n[?] Enter commit message (or press ENTER to cancel): ").strip()
                 if commit_msg:
                     try:
@@ -249,10 +259,12 @@ def main():
                 print("3. [Harden] Add all common development patterns")
                 print("C. Cancel")
                 
+                clear_keyboard_buffer()
                 sub_choice = input(f"\n{YELLOW}[?] Select mode: {RESET}").lower()
                 
                 to_add = []
                 if sub_choice == '1':
+                    clear_keyboard_buffer()
                     manual_path = input(f"{YELLOW}[?] Enter file/folder to ignore: {RESET}").strip()
                     if manual_path: to_add.append(manual_path)
                 elif sub_choice == '2':
@@ -339,6 +351,31 @@ def main():
             elif choice in ['20', 'log', 'logs']:
                 print("[*] Launching Live Audit Logs (External)...")
                 subprocess.Popen(['notepad.exe', LOG_FILE])
+
+            elif choice in ['21', 'copy', 'snapshot', 'serverlog']:
+                # Copy server output WITHOUT touching the running server:
+                # reads the mirrored log file, prints it, copies to clipboard.
+                clear_keyboard_buffer()
+                lines_in = input("\n[?] How many last lines? (ENTER = 80): ").strip()
+                try:
+                    n = int(lines_in) if lines_in else 80
+                except ValueError:
+                    n = 80
+                snapshot_server_log(lines=n)
+                input("\nPress ENTER to return to menu...")
+
+            elif choice in ['22', 'orbit', 'orbitai', 'ai']:
+                # Orbit AI: UI menu lives launcher-side (scripts/orbit_ui.py);
+                # all engine work goes through the nodes middleware.
+                try:
+                    from scripts.orbit_ui import run_orbit_menu
+                    run_orbit_menu()
+                except KeyboardInterrupt:
+                    print(f"\n{YELLOW}[!] Orbit AI interrupted. Back to menu.{RESET}")
+                except Exception as e:
+                    print(f"\n{RED}[-] Orbit AI failed to start: {e}{RESET}")
+                    log_system_event(f"Orbit AI launch error: {e}", level="ERROR")
+                input("\nPress ENTER to return to menu...")
 
             # --- RESUME PHASE ---
             # After command exits, we clear the console.

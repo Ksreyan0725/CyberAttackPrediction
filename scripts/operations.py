@@ -37,14 +37,80 @@ def run_script(mode, new_window=False):
             subprocess.Popen(f'start cmd /k "cd /d "{target_dir}" && {cmd_str}"', shell=True)
             print(f"{GREEN}[*] Process spawned in separate window successfully.{RESET}")
         else:
-            # Run in the same terminal
-            subprocess.run(cmd, cwd=target_dir, check=True)
+            # Run in the same terminal, mirroring every line to the server log
+            # file as well. That copy is what Option 21 reads, so logs can be
+            # viewed/copied later without ever selecting text in this console
+            # (which used to freeze or kill the running server).
+            os.makedirs(os.path.dirname(SERVER_LOG_FILE), exist_ok=True)
+            try:
+                log_f = open(SERVER_LOG_FILE, "a", encoding="utf-8", errors="replace")
+            except Exception:
+                log_f = None
+            proc = None
+            try:
+                if log_f:
+                    log_f.write(f"\n===== Server started {time.strftime('%Y-%m-%d %H:%M:%S')} ({mode}) =====\n")
+                    log_f.flush()
+                # -u / PYTHONUNBUFFERED: without these, piped output would sit
+                # in a buffer and neither screen nor log file would update live.
+                env = dict(os.environ, PYTHONUNBUFFERED="1")
+                cmd_live = list(cmd) + (["-u"] if mode == 'webapp' else [])
+                proc = subprocess.Popen(cmd_live, cwd=target_dir,
+                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                        text=True, errors="replace", bufsize=1, env=env)
+                for line in proc.stdout:
+                    sys.stdout.write(line)
+                    sys.stdout.flush()
+                    if log_f:
+                        log_f.write(line)
+                proc.wait()
+            except KeyboardInterrupt:
+                # Ctrl+C still means "stop the server" — shut the child down too.
+                if proc is not None:
+                    try:
+                        proc.terminate()
+                    except Exception:
+                        pass
+                raise
+            finally:
+                if log_f:
+                    try:
+                        log_f.close()
+                    except Exception:
+                        pass
             
     except KeyboardInterrupt:
         print(f"\n{YELLOW}[!] Launcher: Process interrupted by user.{RESET}")
     except Exception as e:
         log_system_event(f"Execution Error ({mode}): {str(e)}", level="ERROR")
         print(f"\n{RED}[-] Launcher Error: {e}{RESET}")
+
+def snapshot_server_log(lines=80):
+    """Shows the tail of the mirrored server log and copies it to clipboard.
+
+    The server keeps running untouched — no console selection involved, so
+    nothing can freeze or close it. Used by launcher Option 21.
+    """
+    if not os.path.exists(SERVER_LOG_FILE):
+        print("[-] No server log yet. Launch the WebApp (Option 1) first so there is output to copy.")
+        return
+    try:
+        with open(SERVER_LOG_FILE, "r", encoding="utf-8", errors="replace") as f:
+            tail = f.readlines()[-max(1, lines):]
+        text = "".join(tail).strip()
+        if not text:
+            print("[-] Server log is empty.")
+            return
+        print(f"\n[*] Last {len(tail)} lines of server output (server still running):")
+        print("-" * 50)
+        print(text)
+        print("-" * 50)
+        if copy_text_to_clipboard(text):
+            print(f"{GREEN}[+] Copied to clipboard. Paste anywhere with Ctrl+V.{RESET}")
+        else:
+            print(f"{YELLOW}[!] Clipboard copy failed. Copy from the text above instead.{RESET}")
+    except Exception as e:
+        print(f"[-] Could not read server log: {e}")
 
 def harden_environment():
     """
@@ -246,6 +312,8 @@ def open_repo_smart():
             try:
                 # Sanitize/Validate REPO_URL
                 if REPO_URL.startswith("http://") or REPO_URL.startswith("https://"):
+                    # deepcode ignore CommandInjection: REPO_URL is validated above
+                    # snyk ignore: command_injection
                     subprocess.Popen([exe_path, flag, REPO_URL])
                 else:
                     log_system_event("Invalid REPO_URL for Incognito launch", level="ERROR")

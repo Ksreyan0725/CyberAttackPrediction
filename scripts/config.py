@@ -54,7 +54,8 @@ PATHS = {
     "model": os.path.join(root_dir, CONFIG["PROJECT_NAME"], "model"),
     "venv": os.path.join(root_dir, CONFIG["VENV_DIR"]),
     "requirements": os.path.join(root_dir, CONFIG["PROJECT_NAME"], "requirements.txt"),
-    "log": os.path.join(root_dir, "launcher_debug.log"),
+    "log": os.path.join(root_dir, "logs", "launcher.log"),
+    "server_log": os.path.join(root_dir, "logs", "server_output.log"),
     "settings": os.path.join(root_dir, "launcher_settings.json"),
     "venv_exe": os.path.join(root_dir, CONFIG["VENV_DIR"], "Scripts", "python.exe")
 }
@@ -63,7 +64,12 @@ VENV_PATH = sys.prefix if IS_VIRTUAL else sys.base_prefix
 VENV_NAME = os.path.basename(VENV_PATH) if IS_VIRTUAL else "Global Python"
 REPO_URL  = CONFIG["REPO_URL"]
 LOG_FILE = PATHS["log"]
+SERVER_LOG_FILE = PATHS["server_log"]
 SETTINGS_FILE = PATHS["settings"]
+
+# Orbit AI nodes bridge (separate BhasaGrid project, absolute path).
+# Launcher runs this script directly — no user input ever becomes a command.
+ORBIT_NODES = r"C:\BhasaGrid-Project\tools\orbit_ai\nodes.py"
 
 RED     = "\033[91m"
 GREEN   = "\033[92m"

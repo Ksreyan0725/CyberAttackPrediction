@@ -54,7 +54,9 @@ def show_help(query=None):
         ("17/bro/cyber/alias", "Enable ALL Global Aliases (cs, bro, cyber)"),
         ("18/speed/network/test", "Run Network Speed Test"),
         ("19/help/guide", "Open Comprehensive Help Guide"),
-        ("20/log/logs/audit", "View Audit Logs (Notepad)")
+        ("20/log/logs/audit", "View Audit Logs (Notepad)"),
+        ("21/copy/snapshot/serverlog", "Copy Server Logs (no freeze, server keeps running)"),
+        ("22/orbit/ai", "Orbit AI Nodes (chat / conversations / connection test)")
     ]
     
     found = False
@@ -192,6 +194,8 @@ def render_premium_menu(context, current_input=""):
         maint_grid.add_row("[bold red]14.[/] Exit Hub", "[bold yellow]15.[/] Add 'cs'")
         maint_grid.add_row("[bold cyan]16.[/] Reset Browser", "[bold cyan]17.[/] Aliases")
         maint_grid.add_row("[bold green]18.[/] Speed Test", "[bold white]19.[/] Help")
+        maint_grid.add_row("[bold cyan]20.[/] Audit Logs", "[bold cyan]21.[/] Copy Logs")
+        maint_grid.add_row("[bold magenta]22.[/] Orbit AI", "")
         
         menu_columns.add_row(
             Panel(launch_text, title="[green]LAUNCH[/]", border_style="green"),
@@ -215,6 +219,8 @@ def render_premium_menu(context, current_input=""):
         user_opt_grid.add_row("[bold yellow] 9[/] Git Pull",      "[bold yellow]10[/] Git Sync")
         user_opt_grid.add_row("[bold yellow]11[/] Edit Ignore",   "[bold cyan]12[/] Diagnostic")
         user_opt_grid.add_row("[bold red]13[/] Restart",       "[bold red]14[/] Exit Hub")
+        user_opt_grid.add_row("[bold cyan]20[/] Audit Logs",  "[bold cyan]21[/] Copy Logs")
+        user_opt_grid.add_row("[bold magenta]22[/] Orbit AI", "")
 
         left_col = Panel(user_opt_grid, title="[bold cyan]COMMANDS[/]", border_style="cyan", padding=(0, 2))
         sidebar_height = 9 if not use_stacked_layout else None
