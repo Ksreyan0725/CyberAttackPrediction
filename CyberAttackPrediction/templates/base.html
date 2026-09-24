@@ -823,8 +823,9 @@
                         let isJs = false;
                         try { isJs = new URL(link.href).protocol === 'javascript:'; } catch(e) {}
                         if (!isJs) {
-                        if (this.getFullscreenElement()) {
-                            localStorage.setItem(this.config.storageKey, 'active');
+                            if (this.getFullscreenElement()) {
+                                localStorage.setItem(this.config.storageKey, 'active');
+                            }
                         }
                     }
                 }, true);
@@ -1071,13 +1072,19 @@
     
     {% block extra_js %}{% endblock %}
     
-    <!-- Progressive Web App: Service Worker Registration -->
+    <!-- Service Worker removed: pages always load fresh from the server.
+         This one-time cleanup unregisters it in browsers that installed it
+         earlier. Touching nothing else — logins, theme choice, and all
+         localStorage data stay exactly as they are. -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}")
-                    .then(registration => console.log('%c[CyberShield] %cServiceWorker Registered.', 'color: #10b981; font-weight: bold;', 'color: inherit;'))
-                    .catch(err => console.log('%c[CyberShield] %cServiceWorker Failed: ', 'color: #ef4444; font-weight: bold;', 'color: inherit;', err));
+                navigator.serviceWorker.getRegistrations().then((regs) => {
+                    regs.forEach((r) => r.unregister());
+                });
+                if ('caches' in window) {
+                    caches.delete('cybershield-offline-cache-v1');
+                }
             });
         }
     </script>
