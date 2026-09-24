@@ -799,6 +799,7 @@
                     });
                 }
 
+                if (btnResetCreds) {
                     btnResetCreds.addEventListener('click', function () {
                         fetch('/ResetCredentials', { 
                             method: 'POST',
@@ -807,6 +808,7 @@
                             }
                         }).then(() => location.reload());
                     });
+                }
 
                 // Recovery Modal Control Logic
                 const recoveryOverlay = document.getElementById('recoveryOverlay');

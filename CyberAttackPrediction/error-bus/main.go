@@ -13,6 +13,8 @@ import (
 // ─── Configuration ───
 // NOTE: must NOT read PORT — Render sets PORT to the public web port
 // (gunicorn's). The sidecar listens on its own private port instead.
+// Bound to 127.0.0.1 only: same-container traffic (Flask) still reaches it,
+// but Render's port scanner no longer detects an "additional open port".
 const (
 	MaxEvents        = 5000
 	HeartbeatInterval = 3 * time.Second
@@ -245,7 +247,7 @@ func main() {
 	mux.HandleFunc("/events", s.EventsHandler)
 	mux.HandleFunc("/stream", s.StreamHandler)
 	
-	addr := ":" + Port
+	addr := "127.0.0.1:" + Port
 	log.Printf("[error-bus] Starting on %s", addr)
 	log.Fatal(http.ListenAndServe(addr, mux))
 }
