@@ -255,6 +255,9 @@
                     <button class="glass-tab-btn" onclick="switchControlTab('manual', this)">
                         <i class="fas fa-terminal"></i> Operation Manual
                     </button>
+                    <button class="glass-tab-btn" onclick="switchControlTab('logs', this)">
+                        <i class="fas fa-file-alt"></i> Logs
+                    </button>
                     
                     <hr class="my-4 opacity-5">
                     
@@ -273,6 +276,11 @@
                     <div class="mb-5">
                         <h4 class="dynamic-text fw-bold mb-1">Identity Configuration</h4>
                         <p class="small dynamic-muted">Modify your digital credentials and security clearance.</p>
+                        {% if is_guest %}
+                        <div class="alert status-alert-optimized small w-100 mb-0 py-2 dynamic-text rounded-3">
+                            <i class="fas fa-user-secret me-1"></i> Temporary guest identity — set a username and access key below to keep this account permanently.
+                        </div>
+                        {% endif %}
                     </div>
 
                     <form action="/UpdateAccountAction" method="post" onsubmit="return validateProfileUpdate(this);">
@@ -282,16 +290,17 @@
                                 <label class="xx-small fw-bold dynamic-muted text-uppercase mb-2">Primary Username</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-transparent border-0 text-primary ps-0"><i class="fas fa-at"></i></span>
-                                    <input type="text" class="form-control cyber-input" name="username" value="{{ user_data.username }}" required>
+                                    <input type="text" class="form-control cyber-input" name="username" id="usernameUpdate" value="{{ user_data.username }}" data-current="{{ user_data.username }}" required autocomplete="off">
                                 </div>
+                                <div id="usernameUpdateFeedback" class="xx-small fw-bold mt-1"></div>
                             </div>
                             <div class="col-md-6">
                                 <label class="xx-small fw-bold dynamic-muted text-uppercase mb-2">New Access Key</label>
-                                <input type="password" class="form-control cyber-input" name="password" id="key1" placeholder="Minimum 5 characters">
+                                <input type="password" class="form-control cyber-input" name="password" id="key1" placeholder="Minimum 5 characters" {% if is_guest %}required autofocus{% endif %}>
                             </div>
                             <div class="col-md-6">
                                 <label class="xx-small fw-bold dynamic-muted text-uppercase mb-2">Verify Access Key</label>
-                                <input type="password" class="form-control cyber-input" id="key2" placeholder="Confirm new key">
+                                <input type="password" class="form-control cyber-input" id="key2" placeholder="Confirm new key" {% if is_guest %}required{% endif %}>
                             </div>
                         </div>
 
@@ -489,6 +498,62 @@
                             </div>
                         </div>
                     </div>
+
+                </div>
+                
+                <!-- Logs Panel -->
+                <div id="panel-logs" class="tab-content" style="display: none;">
+                    <div class="mb-5">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h4 class="dynamic-text fw-bold mb-1">System Logs</h4>
+                                <p class="small dynamic-muted">View and export application logs.</p>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <select id="log-filter-type" class="form-select form-select-sm w-auto" style="min-width: 140px;">
+                                    <option value="">All Types</option>
+                                    <option value="success">Success</option>
+                                    <option value="error">Error</option>
+                                    <option value="warning">Warning</option>
+                                    <option value="info">Info</option>
+                                </select>
+                                <select id="log-filter-source" class="form-select form-select-sm w-auto" style="min-width: 140px;">
+                                    <option value="">All Sources</option>
+                                    <option value="client">Client</option>
+                                    <option value="server">Server</option>
+                                </select>
+                                <input type="text" id="log-search" class="form-control form-control-sm w-auto" style="min-width: 200px;" placeholder="Search logs...">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span id="log-count" class="small dynamic-muted">Loading...</span>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-secondary" id="btn-copy-all-logs" title="Copy all logs">
+                                    <i class="fas fa-copy me-1"></i> Copy All
+                                </button>
+                                <button class="btn btn-outline-danger" id="btn-clear-logs" title="Clear all logs">
+                                    <i class="fas fa-trash me-1"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                            <table class="table table-dark table-hover mb-0">
+                                <thead class="sticky-top">
+                                    <tr>
+                                        <th style="width: 150px;">Timestamp</th>
+                                        <th style="width: 80px;">Type</th>
+                                        <th style="width: 100px;">Source</th>
+                                        <th style="width: 150px;">Code</th>
+                                        <th>Message</th>
+                                        <th style="width: 50px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logs-tbody"></tbody>
+                            </table>
+                        </div>
+                        <div id="logs-pagination" class="d-flex justify-content-center gap-2 mt-3"></div>
+                    </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -622,19 +687,218 @@
     }
 
     function validateProfileUpdate(f) {
+        if (usernameTaken) {
+            showToast("That username is already claimed — pick another one", "warning"); return false;
+        }
+        if (IS_GUEST && !f.password.value) {
+            showToast("Set an access key to keep this guest account", "warning"); return false;
+        }
         if (f.password.value !== "" && f.password.value !== document.getElementById('key2').value) {
             showToast("Access Key mismatch", "warning"); return false;
         }
         return true;
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        startOperationalClock();
-        const lastTab = localStorage.getItem('active_command_tab');
-        if (lastTab && lastTab !== 'profile') {
-            const btn = Array.from(document.querySelectorAll('.glass-tab-btn')).find(b => b.innerText.toLowerCase().includes(lastTab));
-            if (btn) btn.click();
+    // Live username check (same way as Signup): own current name is neutral,
+    // a claimed name blocks the override, a free name gets a green signal.
+    // IS_GUEST comes from the server: guests are converting to real accounts.
+    const IS_GUEST = {{ 'true' if is_guest else 'false' }};
+    let usernameTaken = false;
+    (function initUsernameCheck() {
+        const input = document.getElementById('usernameUpdate');
+        const feedback = document.getElementById('usernameUpdateFeedback');
+        if (!input || !feedback) return;
+        const current = (input.dataset.current || '').trim().toLowerCase();
+        let timer;
+        input.addEventListener('input', () => {
+            const name = input.value.trim();
+            clearTimeout(timer);
+            usernameTaken = false;
+            if (name.length < 3 || name.toLowerCase() === current) {
+                feedback.textContent = name.toLowerCase() === current && name ? 'CURRENT IDENTITY' : '';
+                feedback.className = 'xx-small fw-bold mt-1 dynamic-muted';
+                return;
+            }
+            timer = setTimeout(async () => {
+                try {
+                    const res = await fetch('/CheckUsername', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({ username: name })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'taken') {
+                        usernameTaken = true;
+                        feedback.textContent = 'ID ALREADY CLAIMED';
+                        feedback.className = 'xx-small fw-bold mt-1 text-danger';
+                    } else {
+                        feedback.textContent = 'ID AVAILABLE FOR OVERRIDE';
+                        feedback.className = 'xx-small fw-bold mt-1 text-success';
+                    }
+                } catch (e) {}
+            }, 400);
+        });
+    })();
+
+    // --- Logs Panel Logic ---
+    let logsCurrentPage = 0;
+    const logsPageSize = 50;
+
+    async function loadLogs(page = 0) {
+        logsCurrentPage = page;
+        const type = document.getElementById('log-filter-type')?.value || '';
+        const source = document.getElementById('log-filter-source')?.value || '';
+        const search = document.getElementById('log-search')?.value || '';
+
+        // Load client logs from CyberNotify
+        let allLogs = [];
+        if (window.CyberNotify) {
+            try {
+                const clientLogs = await window.CyberNotify.getLogs({ 
+                    type: type || undefined, 
+                    source: 'client',
+                    search: search || undefined,
+                    limit: 100
+                });
+                allLogs.push(...clientLogs);
+            } catch (e) {
+                console.warn('Failed to load client logs:', e);
+            }
+        }
+
+        // Load server logs from API
+        try {
+            const params = new URLSearchParams();
+            if (type) params.set('type', type);
+            if (source) params.set('source', source);
+            if (search) params.set('search', search);
+            params.set('limit', '100');
+            params.set('offset', '0');
+
+            const res = await fetch('/api/logs?' + params.toString());
+            if (res.ok) {
+                const data = await res.json();
+                allLogs.push(...(data.logs || []));
+            }
+        } catch (e) {
+            console.warn('Failed to load server logs:', e);
+        }
+
+        // Sort and filter
+        allLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+        // Update count
+        document.getElementById('log-count').textContent = `${allLogs.length} log(s)`;
+
+        // Render
+        const tbody = document.getElementById('logs-tbody');
+        tbody.innerHTML = allLogs.slice(0, 100).map(log => `
+            <tr>
+                <td class="small">${new Date(log.timestamp).toLocaleString()}</td>
+                <td><span class="badge bg-${log.type === 'error' || log.type === 'danger' ? 'danger' : log.type === 'warning' ? 'warning' : log.type === 'success' ? 'success' : 'info'}">${log.type.toUpperCase()}</span></td>
+                <td><span class="badge bg-secondary">${log.source}</span></td>
+                <td><code class="small">${log.code}</code></td>
+                <td class="text-truncate" style="max-width: 400px;">${escapeHtml(log.message)}</td>
+                <td><button class="btn btn-sm btn-outline-secondary" onclick="copyLog(${JSON.stringify(log).replace(/"/g, '"')})" title="Copy log"><i class="fas fa-copy"></i></button></td>
+            </tr>
+        `).join('');
+
+        // Pagination (simplified)
+        document.getElementById('logs-pagination').innerHTML = '';
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function copyLog(log) {
+        navigator.clipboard.writeText(JSON.stringify(log, null, 2));
+        CyberNotify.toast({ message: 'Log copied to clipboard', type: 'success' });
+    }
+
+    async function copyAllLogs() {
+        // Get all logs
+        let allLogs = [];
+        if (window.CyberNotify) {
+            try {
+                const clientLogs = await window.CyberNotify.getLogs({ limit: 500 });
+                allLogs.push(...clientLogs);
+            } catch (e) {}
+        }
+        try {
+            const res = await fetch('/api/logs?limit=500');
+            if (res.ok) {
+                const data = await res.json();
+                allLogs.push(...(data.logs || []));
+            }
+        } catch (e) {}
+        
+        allLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        const text = allLogs.map(l => `[${l.timestamp}] [${l.type.toUpperCase()}] [${l.source}] [${l.code}] ${l.message}${l.details ? '\n  ' + JSON.stringify(l.details) : ''}`).join('\n\n');
+        await navigator.clipboard.writeText(text);
+        CyberNotify.toast({ message: `Copied ${allLogs.length} log(s) to clipboard`, type: 'success' });
+    }
+
+    async function clearAllLogs() {
+        if (!confirm('Clear all client and server logs?')) return;
+        if (window.CyberNotify) {
+            await window.CyberNotify.clearLogs();
+        }
+        try {
+            await fetch('/api/logs/clear', { method: 'POST' });
+        } catch (e) {}
+        await loadLogs(0);
+        CyberNotify.toast({ message: 'All logs cleared', type: 'success' });
+    }
+
+    // Attach event listeners when Logs panel is shown
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-bs-toggle="tab"], .glass-tab-btn');
+        if (btn && btn.getAttribute('onclick')?.includes('logs')) {
+            setTimeout(() => {
+                if (!window.logsLoaded) {
+                    loadLogs(0);
+                    window.logsLoaded = true;
+                }
+            }, 100);
         }
     });
+
+    // Attach event listeners for filter controls
+    document.addEventListener('change', (e) => {
+        if (e.target.id === 'log-filter-type' || e.target.id === 'log-filter-source') {
+            loadLogs(0);
+        }
+    });
+
+    document.addEventListener('input', (e) => {
+        if (e.target.id === 'log-search') {
+            clearTimeout(window._logSearchTimeout);
+            window._logSearchTimeout = setTimeout(() => loadLogs(0), 300);
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target.id === 'btn-copy-all-logs') copyAllLogs();
+        if (e.target.id === 'btn-clear-logs') clearAllLogs();
+    });
+
+    // Export functions to window for onclick handlers
+    window.switchControlTab = switchControlTab;
+    window.fetchRegistryUsers = fetchRegistryUsers;
+    window.adminTerminateUser = adminTerminateUser;
+    window.adminResetKey = adminResetKey;
+    window.updateEnvTheme = updateEnvTheme;
+    window.validateProfileUpdate = validateProfileUpdate;
+    window.loadLogs = loadLogs;
+    window.copyAllLogs = copyAllLogs;
+    window.clearAllLogs = clearAllLogs;
+    window.copyLog = copyLog;
+
 </script>
 {% endblock %}

@@ -224,6 +224,14 @@
             transition-delay: 0.4s !important
         }
 
+        /* Telegram-style circular theme reveal: kill the default VT fade so
+           only our clip-path circle (driven from the toggle button) shows. */
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+            animation: none;
+            mix-blend-mode: normal
+        }
+
         html,
         body {
             overflow-x: hidden;
@@ -530,12 +538,47 @@
             }
 
             .footer {
-                height: 350px;
-                padding-bottom: 110px
+                height: 300px;
+                padding-top: 28px;
+                padding-bottom: 100px
             }
 
             .main-surface {
-                margin-bottom: 350px
+                margin-bottom: 300px
+            }
+
+            .footer-content .row {
+                row-gap: 0.6rem;
+                margin-bottom: 0.75rem !important
+            }
+
+            .footer-content .col-md-4 {
+                text-align: center !important
+            }
+
+            .footer-content h4 {
+                font-size: 1.1rem
+            }
+
+            .footer-content .row > .mt-2 {
+                margin-top: 0.25rem !important
+            }
+
+            .footer-links {
+                justify-content: center !important;
+                flex-wrap: wrap;
+                gap: 1rem !important
+            }
+
+            .footer-links a {
+                font-size: 0.82rem;
+                opacity: 1;
+                transform: none
+            }
+
+            .footer-btn {
+                font-size: 0.75rem;
+                padding: 4px 16px
             }
         }
 
@@ -1388,6 +1431,27 @@
         .dropdown-item:hover {
             background: rgba(var(--primary-rgb), .15) !important;
             transform: translateX(5px)
+        }
+
+        /* User account dropdown: dark by default, light in light-mode */
+        .navbar .user-dropdown {
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px)
+        }
+
+        .light-mode .navbar .user-dropdown {
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12)
+        }
+
+        .light-mode .navbar .user-dropdown .dropdown-item {
+            color: #212529 !important
+        }
+
+        .light-mode .navbar .user-dropdown .dropdown-divider {
+            border-color: rgba(0, 0, 0, 0.12) !important;
+            opacity: 1
         }
 
         .dropdown-toggle::after {

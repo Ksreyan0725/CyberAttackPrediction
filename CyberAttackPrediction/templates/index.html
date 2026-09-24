@@ -154,6 +154,42 @@
     .img-fade-loaded {
         opacity: 1 !important;
     }
+
+    /* Mobile: shrink oversized hero CTAs */
+    @media (max-width: 768px) {
+        .hero-section {
+            padding: 18px 0 8px;
+        }
+        .btn-hero-glow {
+            padding: 0.7rem 1.1rem !important;
+            font-size: 0.95rem !important;
+            border-radius: 12px;
+        }
+        .hero-section .btn-lg {
+            padding: 0.65rem 1.1rem !important;
+            font-size: 0.95rem !important;
+        }
+        .hero-section .d-flex.gap-3 {
+            gap: 0.65rem !important;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero-section .d-flex.gap-3 {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.6rem !important;
+            padding: 0 0.25rem;
+        }
+        .hero-section .btn-hero-glow,
+        .hero-section .btn-lg {
+            width: 100%;
+            justify-content: center;
+        }
+        .hero-section .display-5 {
+            font-size: 1.55rem;
+        }
+    }
 </style>
 {% endblock %}
 

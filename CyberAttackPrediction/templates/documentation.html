@@ -1186,7 +1186,8 @@
                         <div class="neural-text">Neural Refreshing...</div>
                     </div>
                 `;
-                contentEl.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(rawHTML) : rawHTML;
+                // Enforce strict sanitization without fallback to satisfy static analyzers
+                contentEl.innerHTML = window.DOMPurify.sanitize(rawHTML);
 
                 if (data.title) document.title = data.title + ' — CyberShield AI';
 
